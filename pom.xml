@@ -28,7 +28,26 @@
             </dependency>
         </dependencies>
     </dependencyManagement>
-
+    <!--        <dependency>-->
+    <!--            <groupId>org.hibernate.orm</groupId>-->
+    <!--            <artifactId>hibernate-processor</artifactId>-->
+    <!--            <version>7.2.5.Final</version>-->
+    <!--        </dependency>-->
+    <!--        <dependency>-->
+    <!--            <groupId>org.hibernate.orm</groupId>-->
+    <!--            <artifactId>hibernate-jpamodelgen</artifactId>-->
+    <!--            <version>7.2.5.Final</version>-->
+    <!--            <optional>true</optional>-->
+    <!--        </dependency>-->
+    <!--        <dependency>-->
+    <!--            <groupId>org.hibernate.orm</groupId>-->
+    <!--            <artifactId>hibernate-core</artifactId>-->
+    <!--            <version>7.2.5.Final</version>-->
+    <!--        </dependency>-->
+    <!--        <dependency>-->
+    <!--            <groupId>io.quarkus</groupId>-->
+    <!--            <artifactId>quarkus-hibernate-orm</artifactId>-->
+    <!--        </dependency>-->
     <dependencies>
         <dependency>
             <groupId>io.quarkus</groupId>
@@ -65,18 +84,10 @@
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-jdbc-postgresql</artifactId>
         </dependency>
-<!--        <dependency>-->
-<!--            <groupId>io.quarkus</groupId>-->
-<!--            <artifactId>quarkus-hibernate-orm-rest-data-panache</artifactId>-->
-<!--        </dependency>-->
-<!--        <dependency>-->
-<!--            <groupId>io.quarkus</groupId>-->
-<!--            <artifactId>quarkus-mongodb-rest-data-panache</artifactId>-->
-<!--        </dependency>-->
-<!--        <dependency>-->
-<!--            <groupId>io.quarkus</groupId>-->
-<!--            <artifactId>quarkus-websockets-next</artifactId>-->
-<!--        </dependency>-->
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-messaging-rabbitmq</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
@@ -102,6 +113,15 @@
                 <version>${compiler-plugin.version}</version>
                 <configuration>
                     <parameters>true</parameters>
+                    <annotationProcessorPathsUseDepMgmt>true</annotationProcessorPathsUseDepMgmt>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.hibernate.orm</groupId>
+                            <artifactId>hibernate-processor</artifactId>
+                            <!-- Note, no artifact version is required, it's managed by Quarkus.  -->
+                        </path>
+                        <!-- other processors that may be required by your app -->
+                    </annotationProcessorPaths>
                 </configuration>
             </plugin>
             <plugin>
@@ -135,6 +155,7 @@
                     </systemPropertyVariables>
                 </configuration>
             </plugin>
+
         </plugins>
     </build>
 

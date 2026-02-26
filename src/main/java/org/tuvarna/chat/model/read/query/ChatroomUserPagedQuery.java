@@ -4,7 +4,7 @@ import java.time.Instant;
 
 public sealed interface ChatroomUserPagedQuery permits
         ChatroomUserPagedQuery.GetFirstPage,
-        ChatroomUserPagedQuery.GetFollowingPage  {
+        ChatroomUserPagedQuery.GetFollowingPage {
 
     record GetFirstPage(int chatroomId,
                         boolean extendedPermissionGiven) implements ChatroomUserPagedQuery {
@@ -16,6 +16,5 @@ public sealed interface ChatroomUserPagedQuery permits
                             boolean extendedPermissionGiven) implements ChatroomUserPagedQuery {
     }
 
-//    record GetChatroomUser(int userId)
 
 }

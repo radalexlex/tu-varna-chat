@@ -1,6 +1,7 @@
 package org.tuvarna.chat.model.write.command.handler.impl;
 
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -10,19 +11,15 @@ import org.tuvarna.chat.model.write.command.ChatroomCommand;
 import org.tuvarna.chat.model.write.command.handler.CommandHandler;
 import org.tuvarna.chat.model.write.repository.ChatroomsWrite;
 
-import java.util.Optional;
-
 @ApplicationScoped
 @Named("ChatroomCommandHandler")
-public class ChatroomCommandHandler implements CommandHandler <Integer, ChatroomCommand> {
+public class ChatroomCommandHandler implements CommandHandler<Integer, ChatroomCommand> {
 
     final Logger logger = LoggerFactory.getLogger(ChatroomCommandHandler.class);
 
     ChatroomsWrite chatroomWrite;
 
-    public ChatroomCommandHandler() {
-    }
-
+    @Inject
     public ChatroomCommandHandler(ChatroomsWrite chatroomWrite) {
         this.chatroomWrite = chatroomWrite;
     }
@@ -38,8 +35,8 @@ public class ChatroomCommandHandler implements CommandHandler <Integer, Chatroom
 
                 c = chatroomWrite.save(c);
 
-                if(c == null) {
-                    throw new ChatroomMissingException("Could not create chatroom = {"+name+"}");
+                if (c == null) {
+                    throw new ChatroomMissingException("Could not create chatroom = {" + name + "}");
                 }
 
                 return c.getId();

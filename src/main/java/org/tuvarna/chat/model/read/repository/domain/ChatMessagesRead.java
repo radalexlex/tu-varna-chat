@@ -2,18 +2,31 @@ package org.tuvarna.chat.model.read.repository.domain;
 
 import jakarta.data.page.CursoredPage;
 import jakarta.data.page.PageRequest;
-import jakarta.data.repository.OrderBy;
-import jakarta.data.repository.Query;
-import jakarta.data.repository.Repository;
+import jakarta.data.repository.*;
 import org.tuvarna.chat.model.entity.postgres.ChatMessage;
+import org.tuvarna.chat.model.entity.postgres.ChatMessage_;
+
+import javax.sql.DataSource;
+import java.sql.Connection;
+import java.util.Optional;
+import java.util.List;
 
 @Repository
-public interface ChatMessagesRead extends ReadRepository<ChatMessage, Long> {
+public interface ChatMessagesRead {
 
-    @Query("from ChatMessage where chatroomId = ?1 AND deleted = false")
+    @Find
+    @Query("from ChatMessage where deleted = true and deleted = false")
+    List<ChatMessage> forceListImport();
+
+    @Find
+    Optional<ChatMessage> findById(@By("id(this)") Long id);
+
+    @Find
     @OrderBy(value = "timeSent", descending = true)
     @OrderBy(value = "id", descending = true)
-    CursoredPage<ChatMessage> findChatMessagesPage(int chatroomId,
-                                                   PageRequest pageRequest);
+    CursoredPage<ChatMessage> findByChatroomIdAndDeleted(int chatroomId,
+                                                         boolean deleted,
+                                                       PageRequest pageRequest);
+
 
 }

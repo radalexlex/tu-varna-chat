@@ -1,24 +1,30 @@
 package org.tuvarna.chat.model.write.repository;
 
-import jakarta.data.repository.Param;
-import jakarta.data.repository.Query;
-import jakarta.data.repository.Repository;
-import jakarta.data.repository.Update;
+import jakarta.data.repository.*;
 import org.tuvarna.chat.model.entity.postgres.ChatroomUser;
 import org.tuvarna.chat.model.entity.postgres.enums.ChatroomRole;
 import org.tuvarna.chat.model.entity.postgres.enums.MembershipStatus;
 
-@Repository
-public interface ChatroomUsersWrite extends WriteRepository<ChatroomUser, Integer> {
+import javax.sql.DataSource;
+import java.util.List;
 
-    @Query("update ChatroomUser cu set cu.status = :newStatus where cu.id = :joinId")
+@Repository
+public interface ChatroomUsersWrite {
+
+    @Save
+    ChatroomUser save(ChatroomUser entity);
+
+    @Save
+    List<ChatroomUser> saveAll(List<ChatroomUser> entities);
+
+    @Query("update ChatroomUser cu set cu.status = :newStatus where cu.userId = :userId")
     @Update
-    int changeMembership(@Param("joinId") int joinId,
+    int changeMembership(@Param("userId") long userId,
                          @Param("newStatus") MembershipStatus status); // returns number of changed rows
 
-    @Query("update ChatroomUser cu set cu.role = :newRole where cu.id = :joinId")
+    @Query("update ChatroomUser cu set cu.role = :newRole where cu.userId = :userId")
     @Update
-    int changeRole(@Param("joinId") int joinId,
+    int changeRole(@Param("userId") long userId,
                    @Param("newRole") ChatroomRole role); // returns number of changed rows
 
 }

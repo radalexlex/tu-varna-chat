@@ -2,9 +2,6 @@ package org.tuvarna.chat.model.write.command;
 
 import org.tuvarna.chat.model.entity.postgres.enums.ChatroomRole;
 import org.tuvarna.chat.model.entity.postgres.enums.MembershipStatus;
-import org.tuvarna.chat.model.write.command.ChatroomUserCommand.AddUsers;
-import org.tuvarna.chat.model.write.command.ChatroomUserCommand.ChangeMembershipStatus;
-import org.tuvarna.chat.model.write.command.ChatroomUserCommand.ChangeUserRole;
 import org.tuvarna.chat.model.write.dto.ChatroomUsersSaveData;
 
 public sealed interface ChatroomUserCommand permits
@@ -15,10 +12,10 @@ public sealed interface ChatroomUserCommand permits
     record AddUsers(ChatroomUsersSaveData saveData) implements ChatroomUserCommand {
     }
 
-    record ChangeUserRole(int joinId, ChatroomRole role) implements ChatroomUserCommand {
+    record ChangeUserRole(long userId, ChatroomRole role) implements ChatroomUserCommand {
     }
 
-    record ChangeMembershipStatus(int joinId, MembershipStatus status) implements ChatroomUserCommand {
+    record ChangeMembershipStatus(long userId, MembershipStatus status) implements ChatroomUserCommand {
     }
 
 }

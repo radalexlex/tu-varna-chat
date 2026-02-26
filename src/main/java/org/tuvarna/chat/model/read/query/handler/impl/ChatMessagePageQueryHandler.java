@@ -3,6 +3,7 @@ package org.tuvarna.chat.model.read.query.handler.impl;
 import jakarta.data.page.CursoredPage;
 import jakarta.data.page.PageRequest;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import org.tuvarna.chat.model.entity.postgres.ChatMessage;
 import org.tuvarna.chat.model.read.dto.ChatMessageElement;
@@ -16,18 +17,29 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @ApplicationScoped
-@Named("ChatMessageQueryHandler")
-public class ChatMessageQueryHandler implements QueryHandler <ContentPage<ChatMessageElement>, ChatMessagePagedQuery> {
-
-    ChatMessagesRead repository;
+@Named("ChatMessagePageQueryHandler")
+public class ChatMessagePageQueryHandler implements QueryHandler<ContentPage<ChatMessageElement>, ChatMessagePagedQuery> {
 
     private static final int PAGE_SIZE = 50;
 
-    public ChatMessageQueryHandler() {
+    ChatMessagesRead repository;
+
+    @Inject
+    public ChatMessagePageQueryHandler(ChatMessagesRead repository) {
+        this.repository = repository;
     }
 
-    public ChatMessageQueryHandler(ChatMessagesRead repository) {
-        this.repository = repository;
+    private static List<ChatMessageElement> toElements(
+            List<ChatMessage> entityInput) {
+
+        return entityInput.stream()
+                .map(m -> new ChatMessageElement(
+                        m.getId(),
+                        m.getClientMessageId().toString(),
+                        m.getSenderUserId(),
+                        m.getTimeSent().toString(),
+                        m.getContent()))
+                .collect(Collectors.toList());
     }
 
     @Override // paged dto query
@@ -38,16 +50,18 @@ public class ChatMessageQueryHandler implements QueryHandler <ContentPage<ChatMe
                 PageRequest pageRequest = PageRequest.ofSize(PAGE_SIZE);
 
                 CursoredPage<ChatMessage> p =
-                        repository.findChatMessagesPage(chatroomId, pageRequest);
+                        repository.findByChatroomIdAndDeleted(chatroomId, false, pageRequest);
 
                 return new ContentPage<ChatMessageElement>(
-                                toElements(p.content()),
-                                p.hasPrevious());
+                        toElements(p.content()),
+                        p.hasPrevious());
             }
 
-            case ChatMessagePagedQuery.GetFollowingPage(int chatroomId,
-                                                        Instant oldestTimestamp,
-                                                        int oldestId)-> {
+            case ChatMessagePagedQuery.GetFollowingPage(
+                    int chatroomId,
+                    Instant oldestTimestamp,
+                    int oldestId
+            ) -> {
 
                 PageRequest pageRequest = PageRequest.ofSize(PAGE_SIZE)
                         .beforeCursor(PageRequest
@@ -56,27 +70,13 @@ public class ChatMessageQueryHandler implements QueryHandler <ContentPage<ChatMe
                                         oldestId));
 
                 CursoredPage<ChatMessage> p =
-                        repository.findChatMessagesPage(chatroomId, pageRequest);
+                        repository.findByChatroomIdAndDeleted(chatroomId, false, pageRequest);
 
                 return new ContentPage<ChatMessageElement>(
-                                toElements(p.content()),
-                                p.hasPrevious());
+                        toElements(p.content()),
+                        p.hasPrevious());
             }
 
         }
-    }
-
-
-    private static List<ChatMessageElement> toElements(
-            List<ChatMessage> entityInput) {
-
-        return entityInput.stream()
-                .map(m -> new ChatMessageElement(
-                        m.getId(),
-                        m.getClientMessageId().toString(),
-                        m.getSenderUserId(),
-                        m.getTimeSent(),
-                        m.getContent()))
-                .collect(Collectors.toList());
     }
 }

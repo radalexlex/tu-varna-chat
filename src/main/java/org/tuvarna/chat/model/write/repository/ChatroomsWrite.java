@@ -1,13 +1,20 @@
 package org.tuvarna.chat.model.write.repository;
 
-import jakarta.data.repository.Param;
-import jakarta.data.repository.Query;
-import jakarta.data.repository.Repository;
-import jakarta.data.repository.Update;
+import jakarta.data.repository.*;
+import jakarta.enterprise.inject.Default;
+import org.tuvarna.chat.model.entity.postgres.ChatMessage;
 import org.tuvarna.chat.model.entity.postgres.Chatroom;
 
+import java.util.List;
+
 @Repository
-public interface ChatroomsWrite extends WriteRepository<Chatroom, Integer> {
+public interface ChatroomsWrite {
+
+    @Save
+    Chatroom save(Chatroom entity);
+
+    @Save
+    List<Chatroom> saveAll(List<Chatroom> entities);
 
     @Query("update Chatroom c set c.deleted = true where c.id = :chatroomId")
     @Update

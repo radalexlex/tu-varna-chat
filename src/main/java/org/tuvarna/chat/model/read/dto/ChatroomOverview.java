@@ -4,5 +4,5 @@ import java.time.Instant;
 
 public record ChatroomOverview(int id,
                                String name,
-                               Instant createdAt) {
+                               String createdAt) {
 }

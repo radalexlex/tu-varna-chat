@@ -6,5 +6,5 @@ import java.util.Map;
 
 public record ChatroomUsersSaveData(
         int chatroomId,
-        Map<Integer, ChatroomRole> userToRole) {
+        Map<Long, ChatroomRole> userToRole) {
 }

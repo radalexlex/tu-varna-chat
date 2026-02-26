@@ -25,7 +25,6 @@ import java.time.Instant;
                         name = "chatroom_id_status_join_time_index",
                         columnList = "chatroom_id, status, join_time ASC"
                 )
-
         }
 )
 public class ChatroomUser {
@@ -33,28 +32,29 @@ public class ChatroomUser {
     @SequenceGenerator(
             name = "ChatroomUserSequence",
             sequenceName = "seq_chatroom_user",
-            allocationSize = 10
+            allocationSize = 50
     )
     @GeneratedValue(
             strategy = GenerationType.SEQUENCE,
             generator = "ChatroomUserSequence"
     )
-    private int id;
+    private long id;
     @Column(
             name = "user_id",
             nullable = false,
             updatable = false
     )
     private long userId;
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(
+            insertable = false,
             nullable = false,
             updatable = false
     )
     private Chatroom chatroom;
     @Column(
-            name="chatroom_id",
-            insertable = false,
+            name = "chatroom_id",
+            insertable = true,
             updatable = false,
             nullable = false
     )
@@ -124,11 +124,11 @@ public class ChatroomUser {
         this.userId = userId;
     }
 
-    public int getId() {
+    public long getId() {
         return id;
     }
 
-    public void setId(int id) {
+    public void setId(long id) {
         this.id = id;
     }
 

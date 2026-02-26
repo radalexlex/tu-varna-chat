@@ -2,18 +2,30 @@ package org.tuvarna.chat.model.read.repository.domain;
 
 import jakarta.data.page.CursoredPage;
 import jakarta.data.page.PageRequest;
-import jakarta.data.repository.OrderBy;
-import jakarta.data.repository.Query;
-import jakarta.data.repository.Repository;
+import jakarta.data.repository.*;
 import org.tuvarna.chat.model.entity.postgres.ChatroomUser;
 
+import javax.sql.DataSource;
+import java.sql.Connection;
+import java.util.List;
+import java.util.Optional;
+
 @Repository
-public interface ChatroomUsersRead extends ReadRepository<ChatroomUser, Integer> {
+public interface ChatroomUsersRead {
+
+    @Find
+    Optional<ChatroomUser> findById(@By("id(this)") Long id);
 
     @Query("from ChatroomUser where chatroomId = ?1 ")
     @OrderBy(value = "joinTime", descending = true)
     @OrderBy(value = "id", descending = true)
     CursoredPage<ChatroomUser> findChatroomUsersPage(int chatroomId,
-                                                         PageRequest pageRequest);
+                                                     PageRequest pageRequest);
+
+    @Query("from ChatroomUser where userId = ?1")
+    Optional<ChatroomUser> getUserByUserId(long userId);
+
+    @Query("from ChatroomUser where chatroomId = ?1")
+    List<ChatroomUser> getUsersByChatroomId(int chatroomId);
 
 }

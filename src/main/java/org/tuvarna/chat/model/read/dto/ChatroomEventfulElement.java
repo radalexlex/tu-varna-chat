@@ -4,12 +4,13 @@ import java.time.Instant;
 import java.util.UUID;
 
 public record ChatroomEventfulElement(
-        int userId,
+        long userId,
         int chatroomId,
         String chatroomName,
         String messageContent,
         long lastChatMessageId,
-        UUID clientMessageId,
-        Instant activityTime
-) {}
+        String clientMessageId,
+        String activityTime
+) {
+}
 

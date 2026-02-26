@@ -4,7 +4,7 @@ import java.time.Instant;
 
 public record ChatMessageElement(long id,
                                  String uuid,
-                                 int senderUser,
-                                 Instant timeSent,
+                                 long senderUser,
+                                 String timeSent,
                                  String content) {
 }

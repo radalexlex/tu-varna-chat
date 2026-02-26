@@ -6,11 +6,13 @@ public sealed interface ChatroomEventfulPagedQuery permits
         ChatroomEventfulPagedQuery.GetFirstPageEventOrdered,
         ChatroomEventfulPagedQuery.GetFollowingPageEventOrdered {
 
-    record GetFirstPageEventOrdered(int chatroomUserId) implements ChatroomEventfulPagedQuery {}
+    record GetFirstPageEventOrdered(long userId) implements ChatroomEventfulPagedQuery {
+    }
 
-    record GetFollowingPageEventOrdered(int chatroomUserId,
+    record GetFollowingPageEventOrdered(long userId,
                                         Instant latestEventTimeOnPage,
                                         Integer latestChatroomIdOnPage,
-                                        Integer latestChatMessageIdOnPage) implements ChatroomEventfulPagedQuery {}
+                                        Long latestChatMessageIdOnPage) implements ChatroomEventfulPagedQuery {
+    }
 
 }

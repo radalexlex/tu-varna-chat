@@ -3,6 +3,7 @@ package org.tuvarna.chat.model.read.query.handler.impl;
 import jakarta.data.page.CursoredPage;
 import jakarta.data.page.PageRequest;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import org.tuvarna.chat.model.entity.postgres.ChatroomUser;
 import org.tuvarna.chat.model.entity.postgres.enums.MembershipStatus;
@@ -21,15 +22,33 @@ import java.util.stream.Stream;
 @Named("ChatroomUserPageQueryHandler")
 public class ChatroomUserPageQueryHandler implements QueryHandler<ContentPage<ChatroomUserDetails>, ChatroomUserPagedQuery> {
 
-    ChatroomUsersRead repository;
-
     private static final int PAGE_SIZE = 25;
 
-    public ChatroomUserPageQueryHandler() {
-    }
+    ChatroomUsersRead repository;
 
+    @Inject
     public ChatroomUserPageQueryHandler(ChatroomUsersRead repository) {
         this.repository = repository;
+    }
+
+    private static List<ChatroomUserDetails> toDetails(
+            Stream<ChatroomUser> inputStream) {
+
+        return inputStream.map(d -> new ChatroomUserDetails(
+                        d.getId(),
+                        d.getChatroomId(),
+                        d.getUserId(),
+                        d.getRole().toString(),
+                        d.getStatus().toString(),
+                        d.getJoinTime().toString()))
+                .collect(Collectors.toList());
+    }
+
+    private static List<ChatroomUserDetails> toLimitedDetails(
+            Stream<ChatroomUser> inputStream) {
+        return toDetails(inputStream
+                .filter(d
+                        -> d.getStatus() == MembershipStatus.ACTIVE));
     }
 
     @Override
@@ -42,7 +61,8 @@ public class ChatroomUserPageQueryHandler implements QueryHandler<ContentPage<Ch
 
             case ChatroomUserPagedQuery.GetFirstPage(
                     int chatroomId,
-                    boolean extendedPermissionGiven) -> {
+                    boolean extendedPermissionGiven
+            ) -> {
 
                 exPermission = extendedPermissionGiven;
 
@@ -52,10 +72,12 @@ public class ChatroomUserPageQueryHandler implements QueryHandler<ContentPage<Ch
 
             }
 
-            case ChatroomUserPagedQuery.GetFollowingPage(int chatroomId,
-                                                         Instant oldestAdditionTimestamp,
-                                                         int oldestAdditionId,
-                                                         boolean extendedPermissionGiven) -> {
+            case ChatroomUserPagedQuery.GetFollowingPage(
+                    int chatroomId,
+                    Instant oldestAdditionTimestamp,
+                    int oldestAdditionId,
+                    boolean extendedPermissionGiven
+            ) -> {
 
                 exPermission = extendedPermissionGiven;
 
@@ -75,29 +97,9 @@ public class ChatroomUserPageQueryHandler implements QueryHandler<ContentPage<Ch
                         toDetails(p.content().stream()),
                         p.hasPrevious())
                 : new ContentPage<>(
-                        toLimitedDetails(p.content().stream()),
-                        p.hasPrevious());
+                toLimitedDetails(p.content().stream()),
+                p.hasPrevious());
 
-    }
-
-    private static List<ChatroomUserDetails> toDetails(
-            Stream<ChatroomUser> inputStream) {
-
-        return inputStream.map(d -> new ChatroomUserDetails(
-                                d.getId(),
-                                d.getChatroomId(),
-                                d.getUserId(),
-                                d.getRole().toString(),
-                                d.getStatus().toString(),
-                                d.getJoinTime()))
-                        .collect(Collectors.toList());
-    }
-
-    private static List<ChatroomUserDetails> toLimitedDetails(
-            Stream<ChatroomUser> inputStream) {
-        return toDetails(inputStream
-                .filter(d
-                        -> d.getStatus() == MembershipStatus.ACTIVE));
     }
 
 }

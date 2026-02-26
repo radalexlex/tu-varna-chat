@@ -23,7 +23,7 @@ public class ChatMessage {
     @SequenceGenerator(
             name = "ChatMessageSequence",
             sequenceName = "seq_chat_message",
-            allocationSize = 50
+            allocationSize = 100
     )
     @GeneratedValue(
             strategy = GenerationType.SEQUENCE,
@@ -46,7 +46,7 @@ public class ChatMessage {
     )
     private Chatroom chatroom;
     @Column(
-            name="chatroom_id",
+            name = "chatroom_id",
             insertable = true,
             updatable = false,
             nullable = false
