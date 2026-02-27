@@ -1,8 +1,6 @@
 package org.tuvarna.chat.model.write.repository;
 
 import jakarta.data.repository.*;
-import jakarta.enterprise.inject.Default;
-import org.tuvarna.chat.model.entity.postgres.ChatMessage;
 import org.tuvarna.chat.model.entity.postgres.Chatroom;
 
 import java.util.List;

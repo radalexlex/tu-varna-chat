@@ -10,5 +10,5 @@ public record ChatMessageSaveData(
         int chatroomId,
         long senderId,
         String content,
-        Instant creationTimestamp) {
+        String creationTimestamp) {
 }

@@ -66,7 +66,7 @@ public class ChatMessage {
             nullable = false,
             updatable = false
     )
-    private int senderUserId;
+    private long senderUserId;
     @Column(
             length = 4000,
             nullable = false
@@ -127,11 +127,11 @@ public class ChatMessage {
         this.senderUser = senderUser;
     }
 
-    public int getSenderUserId() {
+    public long getSenderUserId() {
         return senderUserId;
     }
 
-    public void setSenderUserId(int senderUserId) {
+    public void setSenderUserId(long senderUserId) {
         this.senderUserId = senderUserId;
     }
 
@@ -164,7 +164,7 @@ public class ChatMessage {
         if (o == null || getClass() != o.getClass()) return false;
 
         ChatMessage that = (ChatMessage) o;
-        return id == that.id && deleted == that.deleted && Objects.equals(clientMessageId, that.clientMessageId) && Objects.equals(chatroom, that.chatroom) && Objects.equals(senderUser, that.senderUser) && Objects.equals(content, that.content) && Objects.equals(timeSent, that.timeSent);
+        return id == that.id && chatroomId == that.chatroomId && senderUserId == that.senderUserId && deleted == that.deleted && Objects.equals(clientMessageId, that.clientMessageId) && Objects.equals(chatroom, that.chatroom) && Objects.equals(senderUser, that.senderUser) && Objects.equals(content, that.content) && Objects.equals(timeSent, that.timeSent);
     }
 
     @Override
@@ -174,7 +174,7 @@ public class ChatMessage {
         result = 31 * result + Objects.hashCode(chatroom);
         result = 31 * result + chatroomId;
         result = 31 * result + Objects.hashCode(senderUser);
-        result = 31 * result + senderUserId;
+        result = 31 * result + Long.hashCode(senderUserId);
         result = 31 * result + Objects.hashCode(content);
         result = 31 * result + Objects.hashCode(timeSent);
         result = 31 * result + Boolean.hashCode(deleted);

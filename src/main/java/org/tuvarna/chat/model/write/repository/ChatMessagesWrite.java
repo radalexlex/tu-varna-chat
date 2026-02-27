@@ -1,11 +1,11 @@
 package org.tuvarna.chat.model.write.repository;
 
 import jakarta.data.repository.*;
+import org.hibernate.StatelessSession;
+import org.hibernate.Transaction;
 import org.tuvarna.chat.model.entity.postgres.ChatMessage;
 import org.tuvarna.chat.model.write.dto.ChatMessageSaveData;
 
-import javax.sql.DataSource;
-import java.sql.*;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -13,7 +13,7 @@ import java.util.UUID;
 @Repository
 public interface ChatMessagesWrite {
 
-    Connection connection();
+    StatelessSession session();
 
     default int insertMessages(List<ChatMessageSaveData> dataList) {
 
@@ -21,40 +21,26 @@ public interface ChatMessagesWrite {
             return 0;
         }
 
-        final String sql =
-                "INSERT INTO chat_message (" +
-                        "id, chatroom_id, client_message_id, sender_user_id, " +
-                        "content, time_sent, deleted) " +
-                        "VALUES (nextval(seq_chat_message), ?, ?, ?, ?, ?, false)";
+        StatelessSession session = session();
 
-        Timestamp now = Timestamp.from(Instant.now());
+        int count = 0;
 
-        try (Connection conn = connection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+        for (ChatMessageSaveData d : dataList) {
 
-            conn.setAutoCommit(false);
+            ChatMessage entity = new ChatMessage();
+            entity.setChatroomId(d.chatroomId());
+            entity.setClientMessageId(UUID.fromString(d.clientMessageId()));
+            entity.setSenderUserId(d.senderId());
+            entity.setContent(d.content());
+            entity.setTimeSent(Instant.now());
+            entity.setDeleted(false);
 
-            for (ChatMessageSaveData d : dataList) {
-                ps.setInt(1, d.chatroomId());
-                // here check the uuid, if broken then check
-                // all for broken uuids and remove them from the list
-                // and run again
-                ps.setObject(2, UUID.fromString(d.clientMessageId()), Types.OTHER);
-                ps.setLong(3, d.senderId());
-                ps.setString(4, d.content());
-                ps.setTimestamp(5, now);
-
-                ps.addBatch();
-            }
-
-            int[] counts = ps.executeBatch();
-            conn.commit();
-
-            return counts.length;
-
-        } catch (SQLException e) {
-            throw new RuntimeException("Failed to batch insert chat messages", e);
+            session.insert(entity);
+            count++;
         }
+
+        return count;
+
     }
 
     @Save

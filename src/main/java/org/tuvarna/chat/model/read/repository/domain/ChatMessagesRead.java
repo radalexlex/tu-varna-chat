@@ -4,12 +4,9 @@ import jakarta.data.page.CursoredPage;
 import jakarta.data.page.PageRequest;
 import jakarta.data.repository.*;
 import org.tuvarna.chat.model.entity.postgres.ChatMessage;
-import org.tuvarna.chat.model.entity.postgres.ChatMessage_;
 
-import javax.sql.DataSource;
-import java.sql.Connection;
-import java.util.Optional;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface ChatMessagesRead {
@@ -26,7 +23,7 @@ public interface ChatMessagesRead {
     @OrderBy(value = "id", descending = true)
     CursoredPage<ChatMessage> findByChatroomIdAndDeleted(int chatroomId,
                                                          boolean deleted,
-                                                       PageRequest pageRequest);
+                                                         PageRequest pageRequest);
 
 
 }

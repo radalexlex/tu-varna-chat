@@ -5,8 +5,6 @@ import jakarta.data.page.PageRequest;
 import jakarta.data.repository.*;
 import org.tuvarna.chat.model.entity.postgres.ChatroomUser;
 
-import javax.sql.DataSource;
-import java.sql.Connection;
 import java.util.List;
 import java.util.Optional;
 

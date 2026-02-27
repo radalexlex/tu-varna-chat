@@ -5,7 +5,6 @@ import org.tuvarna.chat.model.entity.postgres.ChatroomUser;
 import org.tuvarna.chat.model.entity.postgres.enums.ChatroomRole;
 import org.tuvarna.chat.model.entity.postgres.enums.MembershipStatus;
 
-import javax.sql.DataSource;
 import java.util.List;
 
 @Repository

@@ -1,6 +1,7 @@
 package org.tuvarna.chat.application.api.service;
 
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import jakarta.transaction.Transactional;
 import org.tuvarna.chat.application.api.service.validation.UserValidationHelper;
@@ -25,13 +26,10 @@ import java.util.stream.Collectors;
 public class ChatMessageService {
 
     QueryHandler<ContentPage<ChatMessageElement>, ChatMessagePagedQuery> messageQueryHandler;
-
     CommandHandler<Integer, ChatMessageCommand> commandHandler;
-
     ChatroomUserService chatroomUserService;
 
-    public ChatMessageService() {}
-
+    @Inject
     public ChatMessageService(@Named("ChatMessagePageQueryHandler")
                               QueryHandler<ContentPage<ChatMessageElement>, ChatMessagePagedQuery>
                                       messageQueryHandler,
