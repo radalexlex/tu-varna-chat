@@ -4,16 +4,15 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import org.tuvarna.chat.model.read.dto.ChatroomEventfulElement;
-import org.tuvarna.chat.model.read.query.ChatroomEventfulPagedQuery;
+import org.tuvarna.chat.model.read.dto.ContentPage;
+import org.tuvarna.chat.model.read.query.PageQuery;
 import org.tuvarna.chat.model.read.query.handler.QueryHandler;
+import org.tuvarna.chat.model.read.query.page.data.ChatroomEventfulPageData;
 import org.tuvarna.chat.model.read.repository.projection.ChatroomEventfulRead;
-
-import java.time.Instant;
-import java.util.List;
 
 @ApplicationScoped
 @Named("ChatroomEventfulPageQueryHandler")
-public class ChatroomEventfulPageQueryHandler implements QueryHandler<List<ChatroomEventfulElement>, ChatroomEventfulPagedQuery> {
+public class ChatroomEventfulPageQueryHandler implements QueryHandler<ContentPage<ChatroomEventfulElement>, PageQuery<Long, ChatroomEventfulPageData>> {
 
     ChatroomEventfulRead repository;
 
@@ -23,36 +22,20 @@ public class ChatroomEventfulPageQueryHandler implements QueryHandler<List<Chatr
     }
 
     @Override
-    public List<ChatroomEventfulElement> handleQuery(ChatroomEventfulPagedQuery query) {
+    public ContentPage<ChatroomEventfulElement> handleQuery(PageQuery<Long, ChatroomEventfulPageData> query) {
         switch (query) {
-            case ChatroomEventfulPagedQuery.GetFirstPageEventOrdered(long userId) -> {
-
-                List<ChatroomEventfulElement> elements = repository.findPageChatroomEventful(
-                        userId,
-                        null,
-                        0,
-                        0L
-                );
-
-                return elements;
-
-            }
-
-            case ChatroomEventfulPagedQuery.GetFollowingPageEventOrdered(
-                    long userId,
-                    Instant latestEventTimeOnPage,
-                    Integer latestChatroomIdOnPage,
-                    Long latestChatMessageIdOnPage) -> {
-
-                List<ChatroomEventfulElement> elements = repository.findPageChatroomEventful(
-                        userId,
-                        latestEventTimeOnPage,
-                        latestChatroomIdOnPage,
-                        latestChatMessageIdOnPage
-                );
-
-                return elements;
-
+            case PageQuery.GetPage(Long userId, ChatroomEventfulPageData data) -> {
+                if (data == null) {
+                    return repository.findPageChatroomEventful(
+                            userId, null, 0, 0L);
+                } else {
+                    return repository.findPageChatroomEventful(
+                            userId,
+                            data.latestEventTimeOnPage(),
+                            data.latestChatroomIdOnPage(),
+                            data.latestChatMessageIdOnPage()
+                    );
+                }
             }
         }
     }

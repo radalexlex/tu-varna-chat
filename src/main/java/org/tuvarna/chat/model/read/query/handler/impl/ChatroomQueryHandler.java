@@ -6,13 +6,13 @@ import jakarta.inject.Named;
 import org.tuvarna.chat.application.exceptions.notfound.ChatroomNotFoundException;
 import org.tuvarna.chat.model.entity.postgres.Chatroom;
 import org.tuvarna.chat.model.read.dto.ChatroomOverview;
-import org.tuvarna.chat.model.read.query.ChatroomQuery;
+import org.tuvarna.chat.model.read.query.DetailQuery;
 import org.tuvarna.chat.model.read.query.handler.QueryHandler;
 import org.tuvarna.chat.model.read.repository.domain.ChatroomsRead;
 
 @ApplicationScoped
 @Named("ChatroomQueryHandler")
-public class ChatroomQueryHandler implements QueryHandler<ChatroomOverview, ChatroomQuery> {
+public class ChatroomQueryHandler implements QueryHandler<ChatroomOverview, DetailQuery<Integer>> {
 
     ChatroomsRead repository;
 
@@ -22,9 +22,9 @@ public class ChatroomQueryHandler implements QueryHandler<ChatroomOverview, Chat
     }
 
     @Override
-    public ChatroomOverview handleQuery(ChatroomQuery query) {
+    public ChatroomOverview handleQuery(DetailQuery<Integer> query) {
         switch (query) {
-            case ChatroomQuery.GetChatroomOverview(int chatroomId) -> { // chatroom dto
+            case DetailQuery.GetData(Integer chatroomId) -> {
 
                 Chatroom c = repository.findById(chatroomId)
                         .orElseThrow(() -> new ChatroomNotFoundException(

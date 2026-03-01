@@ -9,6 +9,7 @@ import org.tuvarna.chat.application.api.service.ChatroomService;
 import org.tuvarna.chat.application.exceptions.page.PaginationException;
 import org.tuvarna.chat.model.read.dto.ChatroomEventfulElement;
 import org.tuvarna.chat.model.read.dto.ChatroomOverview;
+import org.tuvarna.chat.model.read.dto.ContentPage;
 
 import java.time.Instant;
 import java.util.List;
@@ -77,7 +78,7 @@ public class ChatroomResource {
                 : null;
 
         try {
-            List<ChatroomEventfulElement> result =
+            ContentPage<ChatroomEventfulElement> result =
                     chatroomService.getChatroomEventfulElements(
                             requestingUserId,
                             parsedTimestamp,

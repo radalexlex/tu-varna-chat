@@ -9,18 +9,18 @@ import org.tuvarna.chat.model.entity.postgres.ChatroomUser;
 import org.tuvarna.chat.model.entity.postgres.enums.MembershipStatus;
 import org.tuvarna.chat.model.read.dto.ChatroomUserDetails;
 import org.tuvarna.chat.model.read.dto.ContentPage;
-import org.tuvarna.chat.model.read.query.ChatroomUserPagedQuery;
+import org.tuvarna.chat.model.read.query.PageQuery;
 import org.tuvarna.chat.model.read.query.handler.QueryHandler;
+import org.tuvarna.chat.model.read.query.page.data.ChatroomUserPageData;
 import org.tuvarna.chat.model.read.repository.domain.ChatroomUsersRead;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @ApplicationScoped
 @Named("ChatroomUserPageQueryHandler")
-public class ChatroomUserPageQueryHandler implements QueryHandler<ContentPage<ChatroomUserDetails>, ChatroomUserPagedQuery> {
+public class ChatroomUserPageQueryHandler implements QueryHandler<ContentPage<ChatroomUserDetails>, PageQuery<Integer, ChatroomUserPageData>> {
 
     private static final int PAGE_SIZE = 25;
 
@@ -52,54 +52,37 @@ public class ChatroomUserPageQueryHandler implements QueryHandler<ContentPage<Ch
     }
 
     @Override
-    public ContentPage<ChatroomUserDetails> handleQuery(ChatroomUserPagedQuery query) {
+    public ContentPage<ChatroomUserDetails> handleQuery(PageQuery<Integer, ChatroomUserPageData> query) {
 
         CursoredPage<ChatroomUser> p;
         boolean exPermission = false;
 
         switch (query) {
+            case PageQuery.GetPage(Integer chatroomId, ChatroomUserPageData data) -> {
 
-            case ChatroomUserPagedQuery.GetFirstPage(
-                    int chatroomId,
-                    boolean extendedPermissionGiven
-            ) -> {
+                exPermission = data.extendedPermissionGiven();
+                PageRequest pageRequest;
 
-                exPermission = extendedPermissionGiven;
-
-                PageRequest pageRequest = PageRequest.ofSize(PAGE_SIZE);
-
-                p = repository.findChatroomUsersPage(chatroomId, pageRequest);
-
-            }
-
-            case ChatroomUserPagedQuery.GetFollowingPage(
-                    int chatroomId,
-                    Instant oldestAdditionTimestamp,
-                    int oldestAdditionId,
-                    boolean extendedPermissionGiven
-            ) -> {
-
-                exPermission = extendedPermissionGiven;
-
-                PageRequest pageRequest =
-                        PageRequest.ofSize(PAGE_SIZE)
-                                .afterCursor(PageRequest.Cursor.forKey(
-                                        oldestAdditionId,
-                                        oldestAdditionTimestamp));
+                if (data.oldestAdditionId() == null && data.oldestAdditionTimestamp() == null) {
+                    pageRequest = PageRequest.ofSize(PAGE_SIZE);
+                } else {
+                    pageRequest = PageRequest.ofSize(PAGE_SIZE)
+                            .afterCursor(PageRequest.Cursor.forKey(
+                                    data.oldestAdditionId(),
+                                    data.oldestAdditionTimestamp()));
+                }
 
                 p = repository.findChatroomUsersPage(chatroomId, pageRequest);
+
+                return exPermission ?
+                        new ContentPage<>(
+                                toDetails(p.content().stream()),
+                                p.hasPrevious())
+                        : new ContentPage<>(
+                        toLimitedDetails(p.content().stream()),
+                        p.hasPrevious());
 
             }
         }
-
-        return exPermission ?
-                new ContentPage<>(
-                        toDetails(p.content().stream()),
-                        p.hasPrevious())
-                : new ContentPage<>(
-                toLimitedDetails(p.content().stream()),
-                p.hasPrevious());
-
     }
-
 }

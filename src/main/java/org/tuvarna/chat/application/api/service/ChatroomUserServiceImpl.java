@@ -12,9 +12,10 @@ import org.tuvarna.chat.model.entity.postgres.enums.ChatroomRole;
 import org.tuvarna.chat.model.entity.postgres.enums.MembershipStatus;
 import org.tuvarna.chat.model.read.dto.ChatroomUserDetails;
 import org.tuvarna.chat.model.read.dto.ContentPage;
-import org.tuvarna.chat.model.read.query.ChatroomUserPagedQuery;
-import org.tuvarna.chat.model.read.query.ChatroomUserQuery;
+import org.tuvarna.chat.model.read.query.DetailQuery;
+import org.tuvarna.chat.model.read.query.PageQuery;
 import org.tuvarna.chat.model.read.query.handler.QueryHandler;
+import org.tuvarna.chat.model.read.query.page.data.ChatroomUserPageData;
 import org.tuvarna.chat.model.write.command.ChatroomUserCommand;
 import org.tuvarna.chat.model.write.command.handler.CommandHandler;
 import org.tuvarna.chat.model.write.dto.ChatroomUsersSaveData;
@@ -26,17 +27,20 @@ import java.util.Map;
 @Transactional
 public class ChatroomUserServiceImpl implements ChatroomUserService {
 
-    QueryHandler<ChatroomUserDetails, ChatroomUserQuery> userQuery;
-    QueryHandler<ContentPage<ChatroomUserDetails>, ChatroomUserPagedQuery> userPagedQueryHandler;
+    QueryHandler<ChatroomUserDetails, DetailQuery<Long>> userQuery;
+
+    QueryHandler <ContentPage<ChatroomUserDetails>,
+            PageQuery<Integer, ChatroomUserPageData>> userPagedQueryHandler;
+
     CommandHandler<Integer, ChatroomUserCommand> commandHandler;
 
     @Inject
     public ChatroomUserServiceImpl(@Named("ChatroomUserPageQueryHandler")
-                               QueryHandler<ContentPage<ChatroomUserDetails>, ChatroomUserPagedQuery> userPagedQueryHandler,
+                               QueryHandler<ContentPage<ChatroomUserDetails>, PageQuery<Integer, ChatroomUserPageData>> userPagedQueryHandler,
                                    @Named("ChatroomUserCommandHandler")
                                CommandHandler<Integer, ChatroomUserCommand> commandHandler,
                                    @Named("ChatroomUserQueryHandler")
-                               QueryHandler<ChatroomUserDetails, ChatroomUserQuery> userQuery) {
+                               QueryHandler<ChatroomUserDetails, DetailQuery<Long>> userQuery) {
         this.userPagedQueryHandler = userPagedQueryHandler;
         this.commandHandler = commandHandler;
         this.userQuery = userQuery;
@@ -65,17 +69,20 @@ public class ChatroomUserServiceImpl implements ChatroomUserService {
         if (oldestAdditionTimestamp == null && oldestAdditionId == null) {
 
             return userPagedQueryHandler.handleQuery(
-                    new ChatroomUserPagedQuery.GetFirstPage(
-                            chatroomId, hasExtendedPermissions));
+                    new PageQuery.GetPage<>(chatroomId,
+                            new ChatroomUserPageData(
+                                    null,
+                                    null,
+                                    hasExtendedPermissions)));
 
         } else if (oldestAdditionTimestamp != null && oldestAdditionId != null) {
 
             return userPagedQueryHandler.handleQuery(
-                    new ChatroomUserPagedQuery.GetFollowingPage(
+                    new PageQuery.GetPage<>(
                             chatroomId,
-                            oldestAdditionTimestamp,
+                            new ChatroomUserPageData(oldestAdditionTimestamp,
                             oldestAdditionId,
-                            hasExtendedPermissions));
+                            hasExtendedPermissions)));
 
         } else {
             throw new PaginationException("");
@@ -172,8 +179,7 @@ public class ChatroomUserServiceImpl implements ChatroomUserService {
     @Override
     public ChatroomUserDetails getUserDetailsForSelf(long requestingUserId) {
 
-        return this.userQuery.handleQuery(new ChatroomUserQuery
-                .GetChatroomUserDetails(requestingUserId));
+        return this.userQuery.handleQuery(new DetailQuery.GetData<>(requestingUserId));
 
     }
 
@@ -181,12 +187,10 @@ public class ChatroomUserServiceImpl implements ChatroomUserService {
     public ChatroomUserDetails getUserDetailsForRequester(long requestingUserId, long userId) {
 
         ChatroomUserDetails requestingCu = this.userQuery.handleQuery(
-                new ChatroomUserQuery
-                        .GetChatroomUserDetails(requestingUserId));
+                new DetailQuery.GetData<>(requestingUserId));
 
         ChatroomUserDetails cu = this.userQuery.handleQuery(
-                new ChatroomUserQuery
-                        .GetChatroomUserDetails(userId));
+                new DetailQuery.GetData<>(userId));
 
         UserValidationHelper.getSameChatroomUsersValidator(cu).handle(requestingCu);
 

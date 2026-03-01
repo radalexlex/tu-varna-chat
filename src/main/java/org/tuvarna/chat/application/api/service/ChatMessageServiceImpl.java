@@ -9,8 +9,9 @@ import org.tuvarna.chat.application.exceptions.violation.user.UserNotAllowedExce
 import org.tuvarna.chat.model.read.dto.ChatMessageElement;
 import org.tuvarna.chat.model.read.dto.ChatroomUserDetails;
 import org.tuvarna.chat.model.read.dto.ContentPage;
-import org.tuvarna.chat.model.read.query.ChatMessagePagedQuery;
+import org.tuvarna.chat.model.read.query.PageQuery;
 import org.tuvarna.chat.model.read.query.handler.QueryHandler;
+import org.tuvarna.chat.model.read.query.page.data.ChatMessagePageData;
 import org.tuvarna.chat.model.write.command.ChatMessageCommand;
 import org.tuvarna.chat.model.write.command.handler.CommandHandler;
 import org.tuvarna.chat.model.write.dto.ChatMessageSaveData;
@@ -21,13 +22,13 @@ import java.util.List;
 @Transactional
 public class ChatMessageServiceImpl implements ChatMessageService {
 
-    QueryHandler<ContentPage<ChatMessageElement>, ChatMessagePagedQuery> messageQueryHandler;
+    QueryHandler<ContentPage<ChatMessageElement>, PageQuery<Integer, ChatMessagePageData>> messageQueryHandler;
     CommandHandler<Integer, ChatMessageCommand> commandHandler;
     ChatroomUserService chatroomUserService;
 
     @Inject
     public ChatMessageServiceImpl(@Named("ChatMessagePageQueryHandler")
-                              QueryHandler<ContentPage<ChatMessageElement>, ChatMessagePagedQuery>
+                              QueryHandler<ContentPage<ChatMessageElement>, PageQuery<Integer, ChatMessagePageData>>
                                       messageQueryHandler,
                                   @Named("ChatMessageCommandHandler")
                               CommandHandler<Integer, ChatMessageCommand> commandHandler,

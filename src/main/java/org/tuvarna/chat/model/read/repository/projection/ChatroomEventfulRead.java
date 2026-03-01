@@ -4,8 +4,10 @@ import jakarta.data.repository.Repository;
 import org.hibernate.StatelessSession;
 import org.hibernate.query.NativeQuery;
 import org.tuvarna.chat.model.read.dto.ChatroomEventfulElement;
+import org.tuvarna.chat.model.read.dto.ContentPage;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 
 @Repository
@@ -15,7 +17,7 @@ public interface ChatroomEventfulRead {
 
     StatelessSession session();
 
-    default List<ChatroomEventfulElement> findPageChatroomEventful(
+    default ContentPage<ChatroomEventfulElement> findPageChatroomEventful(
             long userId,
             Instant lastActivity,
             Integer lastChatroomId,
@@ -63,8 +65,10 @@ public interface ChatroomEventfulRead {
                 ORDER BY COALESCE(cm.time_sent, cr.created_at) DESC,
                          cr.id ASC,
                          COALESCE(cm.id, 0) ASC
-                LIMIT :limit
+                LIMIT :limit + 1
                 """;
+
+        List<ChatroomEventfulElement> resultList = new ArrayList<>();
 
         try (StatelessSession session = session()) {
 
@@ -77,7 +81,14 @@ public interface ChatroomEventfulRead {
             query.setParameter("lastChatMessageId", lastChatMessageId);
             query.setParameter("limit", PAGE_SIZE);
 
-            return query.getResultList();
+            resultList = query.getResultList();
+        }
+
+        if(resultList.size() > PAGE_SIZE) {
+            resultList.removeLast();
+            return new ContentPage<>(resultList, true);
+        } else {
+            return new ContentPage<>(resultList, false);
         }
     }
 }

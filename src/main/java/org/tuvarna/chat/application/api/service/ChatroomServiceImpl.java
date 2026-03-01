@@ -9,9 +9,11 @@ import org.tuvarna.chat.application.exceptions.page.PaginationException;
 import org.tuvarna.chat.model.read.dto.ChatroomEventfulElement;
 import org.tuvarna.chat.model.read.dto.ChatroomOverview;
 import org.tuvarna.chat.model.read.dto.ChatroomUserDetails;
-import org.tuvarna.chat.model.read.query.ChatroomEventfulPagedQuery;
-import org.tuvarna.chat.model.read.query.ChatroomQuery;
+import org.tuvarna.chat.model.read.dto.ContentPage;
+import org.tuvarna.chat.model.read.query.DetailQuery;
+import org.tuvarna.chat.model.read.query.PageQuery;
 import org.tuvarna.chat.model.read.query.handler.QueryHandler;
+import org.tuvarna.chat.model.read.query.page.data.ChatroomEventfulPageData;
 import org.tuvarna.chat.model.write.command.ChatroomCommand;
 import org.tuvarna.chat.model.write.command.handler.CommandHandler;
 
@@ -22,16 +24,17 @@ import java.util.List;
 @Transactional
 public class ChatroomServiceImpl implements ChatroomService {
 
-    QueryHandler<ChatroomOverview, ChatroomQuery> roomQueryHandler;
-    QueryHandler<List<ChatroomEventfulElement>, ChatroomEventfulPagedQuery> roomEventfulQueryHandler;
+    QueryHandler<ChatroomOverview, DetailQuery<Integer>> roomQueryHandler;
+    QueryHandler<ContentPage<ChatroomEventfulElement>, PageQuery<Long, ChatroomEventfulPageData>> roomEventfulQueryHandler;
     CommandHandler<Integer, ChatroomCommand> commandHandler;
+
     ChatroomUserService chatroomUserService;
 
     @Inject
     public ChatroomServiceImpl(@Named("ChatroomQueryHandler")
-                           QueryHandler<ChatroomOverview, ChatroomQuery> roomQueryHandler,
+                           QueryHandler<ChatroomOverview, DetailQuery<Integer>> roomQueryHandler,
                                @Named("ChatroomEventfulPageQueryHandler")
-                           QueryHandler<List<ChatroomEventfulElement>, ChatroomEventfulPagedQuery> roomEventfulQueryHandler,
+                           QueryHandler<ContentPage<ChatroomEventfulElement>, PageQuery<Long, ChatroomEventfulPageData>> roomEventfulQueryHandler,
                                @Named("ChatroomCommandHandler")
                            CommandHandler<Integer, ChatroomCommand> commandHandler,
                                ChatroomUserService chatroomUserService,
@@ -64,7 +67,7 @@ public class ChatroomServiceImpl implements ChatroomService {
 
     // I assume that the chatroomUserId passed is a valid chatroomUserId securely passed from the upper services
     @Override
-    public List<ChatroomEventfulElement> getChatroomEventfulElements(long userId,
+    public ContentPage<ChatroomEventfulElement> getChatroomEventfulElements(long userId,
                                                                      Instant latestEventTimeOnPage,
                                                                      Integer latestChatroomIdOnPage,
                                                                      Long latestChatMessageIdOnPage) {
@@ -74,19 +77,19 @@ public class ChatroomServiceImpl implements ChatroomService {
                 && latestEventTimeOnPage == null) {
 
             return roomEventfulQueryHandler.handleQuery(
-                    new ChatroomEventfulPagedQuery
-                            .GetFirstPageEventOrdered(userId));
+                    new PageQuery.GetPage<>(userId, null));
 
         } else if (latestChatMessageIdOnPage != null
                 && latestChatroomIdOnPage != null
                 && latestEventTimeOnPage != null) {
 
             return roomEventfulQueryHandler.handleQuery(
-                    new ChatroomEventfulPagedQuery.GetFollowingPageEventOrdered(
+                    new PageQuery.GetPage<>(
                             userId,
+                            new ChatroomEventfulPageData(
                             latestEventTimeOnPage,
                             latestChatroomIdOnPage,
-                            latestChatMessageIdOnPage));
+                            latestChatMessageIdOnPage)));
 
         } else {
             throw new PaginationException("");
@@ -103,7 +106,7 @@ public class ChatroomServiceImpl implements ChatroomService {
         UserValidationHelper.getUserChatroomPresenceValidator(chatroomId).handle(cu);
 
         return roomQueryHandler.handleQuery(
-                new ChatroomQuery.GetChatroomOverview(chatroomId));
+                new DetailQuery.GetData<>(chatroomId));
 
     }
 

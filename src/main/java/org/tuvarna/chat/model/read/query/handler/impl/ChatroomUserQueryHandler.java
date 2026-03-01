@@ -6,16 +6,13 @@ import jakarta.inject.Named;
 import org.tuvarna.chat.application.exceptions.notfound.ChatroomUserNotFoundException;
 import org.tuvarna.chat.model.entity.postgres.ChatroomUser;
 import org.tuvarna.chat.model.read.dto.ChatroomUserDetails;
-import org.tuvarna.chat.model.read.query.ChatroomUserQuery;
+import org.tuvarna.chat.model.read.query.DetailQuery;
 import org.tuvarna.chat.model.read.query.handler.QueryHandler;
 import org.tuvarna.chat.model.read.repository.domain.ChatroomUsersRead;
 
-import java.util.ArrayList;
-import java.util.List;
-
 @ApplicationScoped
 @Named("ChatroomUserQueryHandler")
-public class ChatroomUserQueryHandler implements QueryHandler<ChatroomUserDetails, ChatroomUserQuery> {
+public class ChatroomUserQueryHandler implements QueryHandler<ChatroomUserDetails, DetailQuery<Long>> {
 
     ChatroomUsersRead repository;
 
@@ -25,10 +22,10 @@ public class ChatroomUserQueryHandler implements QueryHandler<ChatroomUserDetail
     }
 
     @Override
-    public ChatroomUserDetails handleQuery(ChatroomUserQuery query) {
+    public ChatroomUserDetails handleQuery(DetailQuery<Long> query) {
 
         switch (query) {
-            case ChatroomUserQuery.GetChatroomUserDetails(long userId) -> {
+            case DetailQuery.GetData<Long>(Long userId) -> {
                 ChatroomUser cu = repository
                         .getUserByUserId(userId)
                         .orElseThrow(() -> new ChatroomUserNotFoundException(
@@ -43,6 +40,5 @@ public class ChatroomUserQueryHandler implements QueryHandler<ChatroomUserDetail
                         cu.getJoinTime().toString());
             }
         }
-
     }
 }
