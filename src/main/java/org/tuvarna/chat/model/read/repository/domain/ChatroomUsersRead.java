@@ -21,9 +21,12 @@ public interface ChatroomUsersRead {
                                                      PageRequest pageRequest);
 
     @Query("from ChatroomUser where userId = ?1")
-    List<ChatroomUser> getUserByUserId(long userId);
+    Optional<ChatroomUser> getUserByUserId(long userId);
 
     @Query("from ChatroomUser where chatroomId = ?1")
     List<ChatroomUser> getUsersByChatroomId(int chatroomId);
+
+    @Query("from ChatroomUser where userId = ?1 and chatroomId = ?2")
+    Optional<ChatroomUser> getUserByUserIdAndChatroomId(long userId, int chatroomId);
 
 }

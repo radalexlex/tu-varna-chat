@@ -27,7 +27,7 @@ public interface ChatroomUserService {
 
     int addFirstChatroomUser(long userId, int chatroomId);
 
-    ChatroomUserDetails getUserDetailsForSelf(long requestingUserId);
+    ChatroomUserDetails getUserDetailsForSelf(long requestingUserId, int chatroomId);
 
-    ChatroomUserDetails getUserDetailsForRequester(long requestingUserId, long userId);
+    ChatroomUserDetails getUserDetailsForRequester(long requestingUserId, long userId, int chatroomId);
 }

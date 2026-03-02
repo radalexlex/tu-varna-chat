@@ -2,46 +2,105 @@ package org.tuvarna.chat.application.api.controller;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import jakarta.ws.rs.PUT;
-import jakarta.ws.rs.Path;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.tuvarna.chat.application.api.service.ChatMessageService;
+import org.tuvarna.chat.application.exceptions.page.PaginationException;
+import org.tuvarna.chat.application.exceptions.violation.user.UserNotAllowedException;
 import org.tuvarna.chat.model.read.dto.ChatMessageElement;
+import org.tuvarna.chat.model.read.dto.ContentPage;
+
+import java.time.Instant;
 
 @ApplicationScoped
 @Path("/chat-messages")
+@Consumes(MediaType.APPLICATION_JSON)
+@Produces(MediaType.APPLICATION_JSON)
 public class ChatMessageResource {
 
-    public record MessageUpdateRequest(long requesterUserId, ChatMessageElement message, String newMessage) {}
+    public record MessageUpdateRequest(
+            long requesterUserId,
+            int chatroomId,
+            ChatMessageElement message,
+            String newMessage
+    ) {}
 
-    public record MessageRemoveRequest(long requesterUserId, ChatMessageElement message) {}
+    public record MessageRemoveRequest(
+            long requesterUserId,
+            int chatroomId,
+            ChatMessageElement message
+    ) {}
 
     @Inject
     ChatMessageService chatMessageService;
 
+    // save is in Processor
+
     @PUT
     @Path("/update")
     public Response updateMessage(MessageUpdateRequest actionRequest) {
-        if(chatMessageService.updateMessage(
-                actionRequest.requesterUserId,
-                actionRequest.message(),
-                actionRequest.newMessage()) == 1) {
-            return Response.ok().build();
-        } else {
+        try {
+            int result = chatMessageService.updateMessage(
+                    actionRequest.requesterUserId(),
+                    actionRequest.message(),
+                    actionRequest.chatroomId(),
+                    actionRequest.newMessage()
+            );
+
+            if (result == 1) {
+                return Response.ok().build();
+            }
+
             return Response.status(Response.Status.BAD_REQUEST).build();
+
+        } catch (UserNotAllowedException e) {
+            return Response.status(Response.Status.FORBIDDEN).build();
         }
     }
 
     @PUT
     @Path("/archive")
     public Response archiveMessage(MessageRemoveRequest actionRequest) {
-        if(chatMessageService.archiveMessage(
-                actionRequest.requesterUserId,
-                actionRequest.message()) == 1) {
-            return Response.ok().build();
-        } else {
+        try {
+            int result = chatMessageService.archiveMessage(
+                    actionRequest.requesterUserId(),
+                    actionRequest.message(),
+                    actionRequest.chatroomId()
+            );
+
+            if (result == 1) {
+                return Response.ok().build();
+            }
+
             return Response.status(Response.Status.BAD_REQUEST).build();
+
+        } catch (UserNotAllowedException e) {
+            return Response.status(Response.Status.FORBIDDEN).build();
         }
     }
 
+    @GET
+    @Path("/page")
+    public Response getMessagePage(@QueryParam("requesterUserId") long requesterUserId,
+                                   @QueryParam("chatroomId") int chatroomId,
+                                   @QueryParam("oldestTimestamp") String oldestTimestamp,
+                                   @QueryParam("oldestId") Integer oldestId) {
+        try {
+            ContentPage<ChatMessageElement> page =
+                    chatMessageService.getMessagePage(
+                            requesterUserId,
+                            chatroomId,
+                            Instant.parse(oldestTimestamp),
+                            oldestId
+                    );
+
+            return Response.ok(page).build();
+
+        } catch (UserNotAllowedException e) {
+            return Response.status(Response.Status.FORBIDDEN).build();
+        } catch (PaginationException e) {
+            return Response.status(Response.Status.BAD_REQUEST).build();
+        }
+    }
 }

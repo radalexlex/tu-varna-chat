@@ -2,9 +2,8 @@ package org.tuvarna.chat.model.write.repository;
 
 import jakarta.data.repository.*;
 import org.hibernate.StatelessSession;
-import org.hibernate.Transaction;
 import org.tuvarna.chat.model.entity.postgres.ChatMessage;
-import org.tuvarna.chat.model.write.dto.ChatMessageSaveData;
+import org.tuvarna.chat.model.write.dto.ChatMessageOperationalData;
 
 import java.time.Instant;
 import java.util.List;
@@ -15,7 +14,7 @@ public interface ChatMessagesWrite {
 
     StatelessSession session();
 
-    default int insertMessages(List<ChatMessageSaveData> dataList) {
+    default int insertMessages(List<ChatMessageOperationalData> dataList) {
 
         if (dataList == null || dataList.isEmpty()) {
             return 0;
@@ -25,7 +24,7 @@ public interface ChatMessagesWrite {
 
         int count = 0;
 
-        for (ChatMessageSaveData d : dataList) {
+        for (ChatMessageOperationalData d : dataList) {
 
             ChatMessage entity = new ChatMessage();
             entity.setChatroomId(d.chatroomId());

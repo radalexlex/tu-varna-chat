@@ -17,7 +17,7 @@ import org.tuvarna.chat.model.read.query.handler.QueryHandler;
 import org.tuvarna.chat.model.read.query.page.data.ChatMessagePageData;
 import org.tuvarna.chat.model.write.command.ChatMessageCommand;
 import org.tuvarna.chat.model.write.command.handler.CommandHandler;
-import org.tuvarna.chat.model.write.dto.ChatMessageSaveData;
+import org.tuvarna.chat.model.write.dto.ChatMessageOperationalData;
 
 import java.time.Instant;
 import java.util.List;
@@ -32,10 +32,10 @@ public class ChatMessageServiceImpl implements ChatMessageService {
 
     @Inject
     public ChatMessageServiceImpl(@Named("ChatMessagePageQueryHandler")
-                              QueryHandler<ContentPage<ChatMessageElement>, PageQuery<Integer, ChatMessagePageData>>
-                                      messageQueryHandler,
+                                  QueryHandler<ContentPage<ChatMessageElement>, PageQuery<Integer, ChatMessagePageData>>
+                                          messageQueryHandler,
                                   @Named("ChatMessageCommandHandler")
-                              CommandHandler<Integer, ChatMessageCommand> commandHandler,
+                                  CommandHandler<Integer, ChatMessageCommand> commandHandler,
                                   ChatroomUserService chatroomUserService) {
         this.messageQueryHandler = messageQueryHandler;
         this.commandHandler = commandHandler;
@@ -43,7 +43,7 @@ public class ChatMessageServiceImpl implements ChatMessageService {
     }
 
     @Override
-    public int addMessages(List<ChatMessageSaveData> saveData) {
+    public int addMessages(List<ChatMessageOperationalData> saveData) {
 
         return commandHandler.handleCommand(new ChatMessageCommand
                 .SendMessages(saveData));
@@ -51,56 +51,65 @@ public class ChatMessageServiceImpl implements ChatMessageService {
     }
 
     @Override
-    public int archiveMessage(long requestingUserId, ChatMessageElement message) {
+    public int archiveMessage(long requestingUserId,
+                              ChatMessageElement message,
+                              int chatroom) {
         //TODO: check requesting user first
 
-        ChatroomUserDetails cu = chatroomUserService.getUserDetailsForSelf(
-                message.senderUser()); // TODO: rewrite logic of validation, don't believe the outer data, believe DB
+        ChatroomUserDetails req = chatroomUserService.getUserDetailsForSelf(requestingUserId, chatroom);
         boolean isSuper;
 
         try {
             isSuper = UserValidationHelper.getSpecialUserValidator(
-                    cu.chatroomId()).handle(cu);
+                    req.chatroomId()).handle(req);
         } catch (UserNotAllowedException e) {
             isSuper = false;
         }
 
-        if(isSuper || requestingUserId == message.senderUser()) {
+        if (isSuper || (requestingUserId == message.senderUser())) {
             return commandHandler.handleCommand(new ChatMessageCommand.ArchiveMessage(message.id()));
         } else {
             throw new UserNotAllowedException("");
         }
-
     }
 
     @Override
-    public int updateMessage(long requestingUserId, ChatMessageElement message, String newContent) {
-        //TODO: check requesting user first
+    public int updateMessage(long requestingUserId,
+                             ChatMessageElement message,
+                             int chatroomId,
+                             String newContent) {
+        ChatroomUserDetails req = chatroomUserService.getUserDetailsForSelf(requestingUserId, chatroomId);
 
-        ChatroomUserDetails cu = chatroomUserService.getUserDetailsForSelf(
-                message.senderUser()); // TODO: rewrite logic of validation, don't believe the outer data, believe DB
-
-        if(requestingUserId != message.senderUser()) {
+        if(req.userId() != message.senderUser()) {
             throw new UserNotAllowedException("");
         }
 
-        UserValidationHelper.getUserChatroomPresenceValidator(cu.chatroomId()).handle(cu);
+        UserValidationHelper.getUserChatroomPresenceValidator(chatroomId).handle(req);
 
         return commandHandler.handleCommand(new ChatMessageCommand.UpdateMessage(message.id(), newContent));
     }
 
     @Override
-    public ContentPage<ChatMessageElement> getMessagePage(long requestingUserId, int chatroomId, Instant oldestTimestamp, Integer oldestId) {
+    public ContentPage<ChatMessageElement> getMessagePage(long requestingUserId,
+                                                          int chatroomId,
+                                                          Instant oldestTimestamp,
+                                                          Integer oldestId) {
 
-        ChatroomUserDetails cu = chatroomUserService.getUserDetailsForSelf()
+        ChatroomUserDetails cu =
+                chatroomUserService
+                        .getUserDetailsForSelf(
+                                requestingUserId,
+                                chatroomId);
 
-        if(oldestTimestamp == null && oldestId == null) {
+        UserValidationHelper.getUserChatroomPresenceValidator(chatroomId).handle(cu);
+
+        if (oldestTimestamp == null && oldestId == null) {
             return messageQueryHandler.handleQuery(
                     new PageQuery.GetPage<>(
                             chatroomId,
                             null));
 
-        } else if(oldestTimestamp != null && oldestId != null) {
+        } else if (oldestTimestamp != null && oldestId != null) {
             return messageQueryHandler.handleQuery(
                     new PageQuery.GetPage<>(
                             chatroomId,
@@ -111,6 +120,7 @@ public class ChatMessageServiceImpl implements ChatMessageService {
         } else {
             throw new PaginationException("");
         }
+
 
     }
 

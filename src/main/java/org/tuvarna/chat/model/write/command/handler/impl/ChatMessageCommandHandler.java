@@ -5,7 +5,7 @@ import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import org.tuvarna.chat.model.write.command.ChatMessageCommand;
 import org.tuvarna.chat.model.write.command.handler.CommandHandler;
-import org.tuvarna.chat.model.write.dto.ChatMessageSaveData;
+import org.tuvarna.chat.model.write.dto.ChatMessageOperationalData;
 import org.tuvarna.chat.model.write.repository.ChatMessagesWrite;
 
 import java.util.List;
@@ -25,7 +25,7 @@ public class ChatMessageCommandHandler implements CommandHandler<Integer, ChatMe
     public Integer handleCommand(ChatMessageCommand command) {
         switch (command) {
             case ChatMessageCommand.SendMessages(
-                    List<ChatMessageSaveData> requestList
+                    List<ChatMessageOperationalData> requestList
             ) -> {
 
                 return chatMessagesWrite.insertMessages(requestList);

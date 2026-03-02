@@ -13,6 +13,9 @@ public class UserSameChatroomValidator extends UserValidatorBaseHandler {
 
     @Override
     public boolean handle(ChatroomUserDetails validateOn) {
+        if(this.comparedTo == null || validateOn == null) {
+            return false;
+        }
         if(this.comparedTo.chatroomId() != validateOn.chatroomId()) {
             throw new ApplicationRuleViolationException("");
         } else return true;

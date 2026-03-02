@@ -1,6 +1,6 @@
 package org.tuvarna.chat.model.write.command;
 
-import org.tuvarna.chat.model.write.dto.ChatMessageSaveData;
+import org.tuvarna.chat.model.write.dto.ChatMessageOperationalData;
 
 import java.util.List;
 
@@ -9,7 +9,7 @@ public sealed interface ChatMessageCommand permits
         ChatMessageCommand.UpdateMessage,
         ChatMessageCommand.SendMessages {
 
-    record SendMessages(List<ChatMessageSaveData> requestList) implements ChatMessageCommand {
+    record SendMessages(List<ChatMessageOperationalData> requestList) implements ChatMessageCommand {
     }
 
     record ArchiveMessage(long messageId) implements ChatMessageCommand {

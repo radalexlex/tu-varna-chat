@@ -9,10 +9,11 @@ import org.tuvarna.chat.model.read.dto.ChatroomUserDetails;
 import org.tuvarna.chat.model.read.query.DetailQuery;
 import org.tuvarna.chat.model.read.query.handler.QueryHandler;
 import org.tuvarna.chat.model.read.repository.domain.ChatroomUsersRead;
+import org.tuvarna.chat.utils.Pair;
 
 @ApplicationScoped
-@Named("ChatroomUserQueryHandler")
-public class ChatroomUserQueryDetailHandler implements QueryHandler<ChatroomUserDetails, DetailQuery<Long>> {
+@Named("ChatroomUserQueryDetailHandler")
+public class ChatroomUserQueryDetailHandler implements QueryHandler<ChatroomUserDetails, DetailQuery<Pair<Long, Integer>>> {
 
     ChatroomUsersRead repository;
 
@@ -22,14 +23,17 @@ public class ChatroomUserQueryDetailHandler implements QueryHandler<ChatroomUser
     }
 
     @Override
-    public ChatroomUserDetails handleQuery(DetailQuery<Long> query) {
+    public ChatroomUserDetails handleQuery(DetailQuery<Pair<Long, Integer>> query) {
 
         switch (query) {
-            case DetailQuery.GetData<Long>(Long userId) -> {
+            case DetailQuery.GetData<Pair<Long,Integer>>(
+                    Pair<Long, Integer> userToChatroom) -> {
                 ChatroomUser cu = repository
-                        .getUserByUserId(userId)
+                        .getUserByUserIdAndChatroomId(userToChatroom.a(), userToChatroom.b())
                         .orElseThrow(() -> new ChatroomUserNotFoundException(
-                                "User with id={" + userId + "} not found"));
+                                "User with id={" + userToChatroom.a()
+                                        + "} not found in chatroom "
+                                        + userToChatroom.b()));
 
                 return new ChatroomUserDetails(
                         cu.getId(),

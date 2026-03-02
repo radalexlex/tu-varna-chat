@@ -38,7 +38,8 @@ public class ChatroomServiceImpl implements ChatroomService {
     public ChatroomServiceImpl(@Named("ChatroomQueryHandler")
                            QueryHandler<ChatroomOverview, DetailQuery<Integer>> roomQueryHandler,
                                @Named("ChatroomEventfulPageQueryHandler")
-                           QueryHandler<ContentPage<ChatroomEventfulElement>, PageQuery<Long, ChatroomEventfulPageData>> roomEventfulQueryHandler,
+                           QueryHandler<ContentPage<ChatroomEventfulElement>,
+                                   PageQuery<Long, ChatroomEventfulPageData>> roomEventfulQueryHandler,
                                @Named("ChatroomCommandHandler")
                            CommandHandler<Integer, ChatroomCommand> commandHandler,
                                @Named("ChatroomTotalQueryHandler")
@@ -65,7 +66,7 @@ public class ChatroomServiceImpl implements ChatroomService {
     public int archiveChatroom(long userId, int chatroomId) {
 
         UserValidationHelper.getSpecialUserValidator(chatroomId)
-                .handle(chatroomUserService.getUserDetailsForSelf(userId));
+                .handle(chatroomUserService.getUserDetailsForSelf(userId, chatroomId));
 
         return commandHandler.handleCommand(new ChatroomCommand
                 .ArchiveChatroom(chatroomId));
@@ -73,10 +74,11 @@ public class ChatroomServiceImpl implements ChatroomService {
     }
 
     @Override
-    public ContentPage<ChatroomEventfulElement> getChatroomEventfulElements(long userId,
-                                                                     Instant latestEventTimeOnPage,
-                                                                     Integer latestChatroomIdOnPage,
-                                                                     Long latestChatMessageIdOnPage) {
+    public ContentPage<ChatroomEventfulElement> getChatroomEventfulElements(
+            long userId,
+            Instant latestEventTimeOnPage,
+            Integer latestChatroomIdOnPage,
+            Long latestChatMessageIdOnPage) {
 
         if (latestChatMessageIdOnPage == null
                 && latestChatroomIdOnPage == null
@@ -104,10 +106,14 @@ public class ChatroomServiceImpl implements ChatroomService {
     }
 
     @Override
-    public ChatroomOverview getChatroomOverview(long requestingUserId, int chatroomId) {
+    public ChatroomOverview getChatroomOverview(
+            long requestingUserId,
+            int chatroomId) {
 
         ChatroomUserDetails cu =
-                chatroomUserService.getUserDetailsForSelf(requestingUserId);
+                chatroomUserService.getUserDetailsForSelf(
+                        requestingUserId,
+                        chatroomId);
 
         UserValidationHelper.getUserChatroomPresenceValidator(chatroomId).handle(cu);
 

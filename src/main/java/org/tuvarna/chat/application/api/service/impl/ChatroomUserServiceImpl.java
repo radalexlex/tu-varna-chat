@@ -20,6 +20,7 @@ import org.tuvarna.chat.model.read.query.page.data.ChatroomUserPageData;
 import org.tuvarna.chat.model.write.command.ChatroomUserCommand;
 import org.tuvarna.chat.model.write.command.handler.CommandHandler;
 import org.tuvarna.chat.model.write.dto.ChatroomUsersSaveData;
+import org.tuvarna.chat.utils.Pair;
 
 import java.time.Instant;
 import java.util.Map;
@@ -28,7 +29,7 @@ import java.util.Map;
 @Transactional
 public class ChatroomUserServiceImpl implements ChatroomUserService {
 
-    QueryHandler<ChatroomUserDetails, DetailQuery<Long>> userQuery;
+    QueryHandler<ChatroomUserDetails, DetailQuery<Pair<Long,Integer>>> userQuery;
 
     QueryHandler <ContentPage<ChatroomUserDetails>,
             PageQuery<Integer, ChatroomUserPageData>> userPagedQueryHandler;
@@ -40,8 +41,8 @@ public class ChatroomUserServiceImpl implements ChatroomUserService {
                                QueryHandler<ContentPage<ChatroomUserDetails>, PageQuery<Integer, ChatroomUserPageData>> userPagedQueryHandler,
                                    @Named("ChatroomUserCommandHandler")
                                CommandHandler<Integer, ChatroomUserCommand> commandHandler,
-                                   @Named("ChatroomUserQueryHandler")
-                               QueryHandler<ChatroomUserDetails, DetailQuery<Long>> userQuery) {
+                                   @Named("ChatroomUserQueryDetailHandler")
+                               QueryHandler<ChatroomUserDetails, DetailQuery<Pair<Long,Integer>>> userQuery) {
         this.userPagedQueryHandler = userPagedQueryHandler;
         this.commandHandler = commandHandler;
         this.userQuery = userQuery;
@@ -54,7 +55,7 @@ public class ChatroomUserServiceImpl implements ChatroomUserService {
                                                      Instant oldestAdditionTimestamp,
                                                      Integer oldestAdditionId) {
 
-        ChatroomUserDetails cu = getUserDetailsForSelf(requestingUserId);
+        ChatroomUserDetails cu = getUserDetailsForSelf(requestingUserId, chatroomId);
 
         boolean hasExtendedPermissions;
 
@@ -94,7 +95,7 @@ public class ChatroomUserServiceImpl implements ChatroomUserService {
     public int addUsers(long requestingUserId,
                         ChatroomUsersSaveData saveData) {
 
-        ChatroomUserDetails cu = getUserDetailsForSelf(requestingUserId);
+        ChatroomUserDetails cu = getUserDetailsForSelf(requestingUserId, saveData.chatroomId());
 
         ValidationHandler<ChatroomUserDetails> validator
                 = UserValidationHelper.getSpecialUserValidator(
@@ -116,7 +117,7 @@ public class ChatroomUserServiceImpl implements ChatroomUserService {
                               long affectedUserId,
                               String updatedRole) {
 
-        ChatroomUserDetails cu = getUserDetailsForSelf(requestingUserId);
+        ChatroomUserDetails cu = getUserDetailsForSelf(requestingUserId, chatroomId);
         ChatroomRole role = ChatroomRole.valueOf(updatedRole.toUpperCase());
 
         ValidationHandler<ChatroomUserDetails> validator =
@@ -135,7 +136,7 @@ public class ChatroomUserServiceImpl implements ChatroomUserService {
                                           long affectedUserId,
                                           String updatedStatus) {
 
-        ChatroomUserDetails requestingCu = getUserDetailsForSelf(requestingUserId);
+        ChatroomUserDetails requestingCu = getUserDetailsForSelf(requestingUserId, chatroomId);
         MembershipStatus updatedStatusEnum = MembershipStatus.valueOf(updatedStatus.toUpperCase());
 
         ValidationHandler<ChatroomUserDetails> validator =
@@ -153,7 +154,7 @@ public class ChatroomUserServiceImpl implements ChatroomUserService {
         } else {
 
             ChatroomUserDetails cuAffected = getUserDetailsForRequester(
-                    requestingUserId, affectedUserId);
+                    requestingUserId, affectedUserId, chatroomId);
 
             validator = UserValidationHelper
                     .getUserChatroomPresenceValidator(chatroomId);
@@ -181,20 +182,20 @@ public class ChatroomUserServiceImpl implements ChatroomUserService {
     }
 
     @Override
-    public ChatroomUserDetails getUserDetailsForSelf(long requestingUserId) {
+    public ChatroomUserDetails getUserDetailsForSelf(long requestingUserId, int chatroomId) {
 
-        return this.userQuery.handleQuery(new DetailQuery.GetData<>(requestingUserId));
+        return this.userQuery.handleQuery(new DetailQuery.GetData<>(new Pair<>(requestingUserId, chatroomId)));
 
     }
 
     @Override
-    public ChatroomUserDetails getUserDetailsForRequester(long requestingUserId, long userId) {
+    public ChatroomUserDetails getUserDetailsForRequester(long requestingUserId, long userId, int chatroomId) {
 
         ChatroomUserDetails requestingCu = this.userQuery.handleQuery(
-                new DetailQuery.GetData<>(requestingUserId));
+                new DetailQuery.GetData<>(new Pair<>(requestingUserId, chatroomId)));
 
         ChatroomUserDetails cu = this.userQuery.handleQuery(
-                new DetailQuery.GetData<>(userId));
+                new DetailQuery.GetData<>(new Pair<>(userId, chatroomId)));
 
         UserValidationHelper.getSameChatroomUsersValidator(cu).handle(requestingCu);
 

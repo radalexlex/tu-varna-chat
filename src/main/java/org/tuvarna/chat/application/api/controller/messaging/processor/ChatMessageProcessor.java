@@ -7,7 +7,7 @@ import jakarta.inject.Inject;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.reactive.messaging.Outgoing;
 import org.tuvarna.chat.application.api.service.ChatMessageService;
-import org.tuvarna.chat.model.write.dto.ChatMessageSaveData;
+import org.tuvarna.chat.model.write.dto.ChatMessageOperationalData;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -30,9 +30,9 @@ public class ChatMessageProcessor {
         if(batch.isEmpty()){
             return null;
         }
-        List<ChatMessageSaveData> saveData = new ArrayList<>(batch.size());
+        List<ChatMessageOperationalData> saveData = new ArrayList<>(batch.size());
         for(JsonObject b : batch){
-            saveData.add(b.mapTo(ChatMessageSaveData.class));
+            saveData.add(b.mapTo(ChatMessageOperationalData.class));
         }
 
         return chatMessageService.addMessages(saveData);
