@@ -1,9 +1,10 @@
-package org.tuvarna.chat.application.api.service;
+package org.tuvarna.chat.application.api.service.impl;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import jakarta.transaction.Transactional;
+import org.tuvarna.chat.application.api.service.ChatroomUserService;
 import org.tuvarna.chat.application.api.service.validation.UserValidationHelper;
 import org.tuvarna.chat.application.api.service.validation.ValidationHandler;
 import org.tuvarna.chat.application.exceptions.page.PaginationException;
@@ -100,6 +101,9 @@ public class ChatroomUserServiceImpl implements ChatroomUserService {
                 saveData.chatroomId());
 
         validator.handle(cu);
+
+        //TODO: check friendship
+
 
         return commandHandler.handleCommand(
                 new ChatroomUserCommand.AddUsers(saveData));

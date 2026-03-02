@@ -19,4 +19,6 @@ public interface ChatroomService {
                                                                      Long latestChatMessageIdOnPage);
 
     ChatroomOverview getChatroomOverview(long requestingUserId, int chatroomId);
+
+    List<Integer> getChatroomIdsForUser(long requestingUserId);
 }

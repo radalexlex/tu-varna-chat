@@ -1,10 +1,13 @@
-package org.tuvarna.chat.application.api.service;
+package org.tuvarna.chat.application.api.service.impl;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import jakarta.transaction.Transactional;
+import org.tuvarna.chat.application.api.service.ChatMessageService;
+import org.tuvarna.chat.application.api.service.ChatroomUserService;
 import org.tuvarna.chat.application.api.service.validation.UserValidationHelper;
+import org.tuvarna.chat.application.exceptions.page.PaginationException;
 import org.tuvarna.chat.application.exceptions.violation.user.UserNotAllowedException;
 import org.tuvarna.chat.model.read.dto.ChatMessageElement;
 import org.tuvarna.chat.model.read.dto.ChatroomUserDetails;
@@ -16,6 +19,7 @@ import org.tuvarna.chat.model.write.command.ChatMessageCommand;
 import org.tuvarna.chat.model.write.command.handler.CommandHandler;
 import org.tuvarna.chat.model.write.dto.ChatMessageSaveData;
 
+import java.time.Instant;
 import java.util.List;
 
 @ApplicationScoped
@@ -83,6 +87,31 @@ public class ChatMessageServiceImpl implements ChatMessageService {
         UserValidationHelper.getUserChatroomPresenceValidator(cu.chatroomId()).handle(cu);
 
         return commandHandler.handleCommand(new ChatMessageCommand.UpdateMessage(message.id(), newContent));
+    }
+
+    @Override
+    public ContentPage<ChatMessageElement> getMessagePage(long requestingUserId, int chatroomId, Instant oldestTimestamp, Integer oldestId) {
+
+        ChatroomUserDetails cu = chatroomUserService.getUserDetailsForSelf()
+
+        if(oldestTimestamp == null && oldestId == null) {
+            return messageQueryHandler.handleQuery(
+                    new PageQuery.GetPage<>(
+                            chatroomId,
+                            null));
+
+        } else if(oldestTimestamp != null && oldestId != null) {
+            return messageQueryHandler.handleQuery(
+                    new PageQuery.GetPage<>(
+                            chatroomId,
+                            new ChatMessagePageData(
+                                    oldestTimestamp,
+                                    oldestId))
+            );
+        } else {
+            throw new PaginationException("");
+        }
+
     }
 
 }

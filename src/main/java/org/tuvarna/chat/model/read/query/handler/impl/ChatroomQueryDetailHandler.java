@@ -12,12 +12,12 @@ import org.tuvarna.chat.model.read.repository.domain.ChatroomsRead;
 
 @ApplicationScoped
 @Named("ChatroomQueryHandler")
-public class ChatroomQueryHandler implements QueryHandler<ChatroomOverview, DetailQuery<Integer>> {
+public class ChatroomQueryDetailHandler implements QueryHandler<ChatroomOverview, DetailQuery<Integer>> {
 
     ChatroomsRead repository;
 
     @Inject
-    public ChatroomQueryHandler(ChatroomsRead repository) {
+    public ChatroomQueryDetailHandler(ChatroomsRead repository) {
         this.repository = repository;
     }
 

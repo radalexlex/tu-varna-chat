@@ -5,6 +5,8 @@ import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.tuvarna.chat.application.api.service.ChatroomService;
 import org.tuvarna.chat.application.exceptions.page.PaginationException;
 import org.tuvarna.chat.model.read.dto.ChatroomEventfulElement;
@@ -12,7 +14,6 @@ import org.tuvarna.chat.model.read.dto.ChatroomOverview;
 import org.tuvarna.chat.model.read.dto.ContentPage;
 
 import java.time.Instant;
-import java.util.List;
 
 @ApplicationScoped
 @Path("/chatrooms")
@@ -20,6 +21,7 @@ import java.util.List;
 @Produces(MediaType.APPLICATION_JSON)
 public class ChatroomResource {
 
+    private static final Logger log = LoggerFactory.getLogger(ChatroomResource.class);
     @Inject
     ChatroomService chatroomService;
 
@@ -89,7 +91,16 @@ public class ChatroomResource {
             return Response.ok(result).build();
 
         } catch (PaginationException e) {
+            log.error(e.getMessage());
             return Response.status(Response.Status.BAD_REQUEST).build();
         }
+    }
+
+    @GET
+    @Path("/subscribe-chatrooms")
+    public Response getChatroomIdsForUser(@QueryParam("userId") long requestingUserId) {
+
+        return Response.ok(chatroomService.getChatroomIdsForUser(requestingUserId)).build();
+
     }
 }

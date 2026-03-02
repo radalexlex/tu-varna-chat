@@ -1,9 +1,11 @@
-package org.tuvarna.chat.application.api.service;
+package org.tuvarna.chat.application.api.service.impl;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import jakarta.transaction.Transactional;
+import org.tuvarna.chat.application.api.service.ChatroomService;
+import org.tuvarna.chat.application.api.service.ChatroomUserService;
 import org.tuvarna.chat.application.api.service.validation.UserValidationHelper;
 import org.tuvarna.chat.application.exceptions.page.PaginationException;
 import org.tuvarna.chat.model.read.dto.ChatroomEventfulElement;
@@ -12,6 +14,7 @@ import org.tuvarna.chat.model.read.dto.ChatroomUserDetails;
 import org.tuvarna.chat.model.read.dto.ContentPage;
 import org.tuvarna.chat.model.read.query.DetailQuery;
 import org.tuvarna.chat.model.read.query.PageQuery;
+import org.tuvarna.chat.model.read.query.TotalQuery;
 import org.tuvarna.chat.model.read.query.handler.QueryHandler;
 import org.tuvarna.chat.model.read.query.page.data.ChatroomEventfulPageData;
 import org.tuvarna.chat.model.write.command.ChatroomCommand;
@@ -25,6 +28,7 @@ import java.util.List;
 public class ChatroomServiceImpl implements ChatroomService {
 
     QueryHandler<ChatroomOverview, DetailQuery<Integer>> roomQueryHandler;
+    QueryHandler<List<Integer>, TotalQuery<Long>> totalQueryHandler;
     QueryHandler<ContentPage<ChatroomEventfulElement>, PageQuery<Long, ChatroomEventfulPageData>> roomEventfulQueryHandler;
     CommandHandler<Integer, ChatroomCommand> commandHandler;
 
@@ -37,12 +41,15 @@ public class ChatroomServiceImpl implements ChatroomService {
                            QueryHandler<ContentPage<ChatroomEventfulElement>, PageQuery<Long, ChatroomEventfulPageData>> roomEventfulQueryHandler,
                                @Named("ChatroomCommandHandler")
                            CommandHandler<Integer, ChatroomCommand> commandHandler,
+                               @Named("ChatroomTotalQueryHandler")
+                            QueryHandler<List<Integer>, TotalQuery<Long>> totalQueryHandler,
                                ChatroomUserService chatroomUserService,
                                UserValidationHelper userValidationHelper) {
         this.roomQueryHandler = roomQueryHandler;
         this.roomEventfulQueryHandler = roomEventfulQueryHandler;
         this.commandHandler = commandHandler;
-        this.chatroomUserService = chatroomUserService; // not an interface
+        this.chatroomUserService = chatroomUserService;
+        this.totalQueryHandler = totalQueryHandler;
     }
 
     @Override
@@ -65,7 +72,6 @@ public class ChatroomServiceImpl implements ChatroomService {
 
     }
 
-    // I assume that the chatroomUserId passed is a valid chatroomUserId securely passed from the upper services
     @Override
     public ContentPage<ChatroomEventfulElement> getChatroomEventfulElements(long userId,
                                                                      Instant latestEventTimeOnPage,
@@ -108,6 +114,11 @@ public class ChatroomServiceImpl implements ChatroomService {
         return roomQueryHandler.handleQuery(
                 new DetailQuery.GetData<>(chatroomId));
 
+    }
+
+    public List<Integer> getChatroomIdsForUser(long requestingUserId) {
+
+        return totalQueryHandler.handleQuery(new TotalQuery.GetAllForCommon<>(requestingUserId));
     }
 
 
