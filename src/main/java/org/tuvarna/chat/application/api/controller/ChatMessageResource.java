@@ -5,6 +5,8 @@ import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.tuvarna.chat.application.api.service.ChatMessageService;
 import org.tuvarna.chat.application.exceptions.page.PaginationException;
 import org.tuvarna.chat.application.exceptions.violation.user.UserNotAllowedException;
@@ -18,6 +20,8 @@ import java.time.Instant;
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
 public class ChatMessageResource {
+
+    private static final Logger log = LoggerFactory.getLogger(ChatMessageResource.class);
 
     public record MessageUpdateRequest(
             long requesterUserId,
@@ -39,7 +43,7 @@ public class ChatMessageResource {
 
     @PUT
     @Path("/update")
-    public Response updateMessage(MessageUpdateRequest actionRequest) {
+    public Response updateMessage(MessageUpdateRequest actionRequest) { // req-resp ok
         try {
             int result = chatMessageService.updateMessage(
                     actionRequest.requesterUserId(),
@@ -61,7 +65,7 @@ public class ChatMessageResource {
 
     @PUT
     @Path("/archive")
-    public Response archiveMessage(MessageRemoveRequest actionRequest) {
+    public Response archiveMessage(MessageRemoveRequest actionRequest) { // req-resp ok
         try {
             int result = chatMessageService.archiveMessage(
                     actionRequest.requesterUserId(),
@@ -82,25 +86,23 @@ public class ChatMessageResource {
 
     @GET
     @Path("/page")
-    public Response getMessagePage(@QueryParam("requesterUserId") long requesterUserId,
+    public ContentPage<ChatMessageElement> getMessagePage(@QueryParam("requesterUserId") long requesterUserId, // data retrieval, req-req-resp not ok
                                    @QueryParam("chatroomId") int chatroomId,
                                    @QueryParam("oldestTimestamp") String oldestTimestamp,
                                    @QueryParam("oldestId") Integer oldestId) {
         try {
-            ContentPage<ChatMessageElement> page =
-                    chatMessageService.getMessagePage(
+            return chatMessageService.getMessagePage(
                             requesterUserId,
                             chatroomId,
                             Instant.parse(oldestTimestamp),
-                            oldestId
-                    );
-
-            return Response.ok(page).build();
+                            oldestId);
 
         } catch (UserNotAllowedException e) {
-            return Response.status(Response.Status.FORBIDDEN).build();
+            throw new ForbiddenException(e.getMessage());
+
         } catch (PaginationException e) {
-            return Response.status(Response.Status.BAD_REQUEST).build();
+            throw new BadRequestException(e.getMessage());
+
         }
     }
 }

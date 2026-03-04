@@ -4,6 +4,11 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import jakarta.transaction.Transactional;
+import org.eclipse.microprofile.rest.client.inject.RestClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.tuvarna.chat.application.api.controller.client.FriendServiceApiClient;
+import org.tuvarna.chat.application.api.controller.dto.friend.PersonDto;
 import org.tuvarna.chat.application.api.service.ChatroomUserService;
 import org.tuvarna.chat.application.api.service.validation.UserValidationHelper;
 import org.tuvarna.chat.application.api.service.validation.ValidationHandler;
@@ -23,18 +28,26 @@ import org.tuvarna.chat.model.write.dto.ChatroomUsersSaveData;
 import org.tuvarna.chat.utils.Pair;
 
 import java.time.Instant;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @ApplicationScoped
 @Transactional
 public class ChatroomUserServiceImpl implements ChatroomUserService {
 
-    QueryHandler<ChatroomUserDetails, DetailQuery<Pair<Long,Integer>>> userQuery;
+    private static final Logger log = LoggerFactory.getLogger(ChatroomUserServiceImpl.class);
 
+    QueryHandler <ChatroomUserDetails, DetailQuery<Pair<Long,Integer>>> userQuery;
     QueryHandler <ContentPage<ChatroomUserDetails>,
             PageQuery<Integer, ChatroomUserPageData>> userPagedQueryHandler;
 
     CommandHandler<Integer, ChatroomUserCommand> commandHandler;
+
+    @RestClient
+    FriendServiceApiClient friendServiceApiClient;
 
     @Inject
     public ChatroomUserServiceImpl(@Named("ChatroomUserPageQueryHandler")
@@ -64,7 +77,6 @@ public class ChatroomUserServiceImpl implements ChatroomUserService {
                     = UserValidationHelper.getSpecialUserValidator(chatroomId);
             hasExtendedPermissions = validator.handle(cu);
         } catch (UserNotAllowedException e) {
-            // log about attempt
             hasExtendedPermissions = false;
         }
 
@@ -103,8 +115,15 @@ public class ChatroomUserServiceImpl implements ChatroomUserService {
 
         validator.handle(cu);
 
-        //TODO: check friendship
+        Set<PersonDto> friendSet =
+                new HashSet<>(friendServiceApiClient.getAllFriendsOfPerson(
+                        requestingUserId));
 
+        saveData.userToRole().keySet().forEach(userId -> {
+            if(!friendSet.contains(new PersonDto(userId))) {
+                throw new UserNotAllowedException("");
+            }
+        });
 
         return commandHandler.handleCommand(
                 new ChatroomUserCommand.AddUsers(saveData));

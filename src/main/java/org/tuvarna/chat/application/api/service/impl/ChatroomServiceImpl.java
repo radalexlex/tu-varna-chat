@@ -29,7 +29,9 @@ public class ChatroomServiceImpl implements ChatroomService {
 
     QueryHandler<ChatroomOverview, DetailQuery<Integer>> roomQueryHandler;
     QueryHandler<List<Integer>, TotalQuery<Long>> totalQueryHandler;
-    QueryHandler<ContentPage<ChatroomEventfulElement>, PageQuery<Long, ChatroomEventfulPageData>> roomEventfulQueryHandler;
+    QueryHandler<ContentPage<ChatroomEventfulElement>,
+            PageQuery<Long, ChatroomEventfulPageData>> roomEventfulQueryHandler;
+
     CommandHandler<Integer, ChatroomCommand> commandHandler;
 
     ChatroomUserService chatroomUserService;
@@ -104,6 +106,7 @@ public class ChatroomServiceImpl implements ChatroomService {
         }
 
     }
+
 
     @Override
     public ChatroomOverview getChatroomOverview(

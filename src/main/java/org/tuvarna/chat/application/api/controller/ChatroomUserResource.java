@@ -8,6 +8,7 @@ import jakarta.ws.rs.core.Request;
 import jakarta.ws.rs.core.Response;
 import org.tuvarna.chat.application.api.service.ChatroomService;
 import org.tuvarna.chat.application.api.service.ChatroomUserService;
+import org.tuvarna.chat.application.exceptions.violation.user.UserNotAllowedException;
 import org.tuvarna.chat.model.entity.postgres.enums.ChatroomRole;
 import org.tuvarna.chat.model.read.dto.ChatroomUserDetails;
 import org.tuvarna.chat.model.read.dto.ContentPage;
@@ -35,7 +36,7 @@ public class ChatroomUserResource {
 
     @GET
     @Path("/{chatroomId}/users")
-    public Response getUsers(
+    public ContentPage<ChatroomUserDetails> getUsers(
             @QueryParam("userId") long requestingUserId,
             @QueryParam("oldestAdditionTimestamp") String oldestAdditionTimestamp,
             @QueryParam("oldestAdditionId") Integer oldestAdditionId,
@@ -45,15 +46,13 @@ public class ChatroomUserResource {
                 ? Instant.parse(oldestAdditionTimestamp)
                 : null;
 
-        ContentPage<ChatroomUserDetails> page =
-                chatroomUserService.getUsers(
+                return chatroomUserService.getUsers(
                         requestingUserId,
                         chatroomId,
                         parsedTimestamp,
                         oldestAdditionId
                 );
 
-        return Response.ok(page).build();
     }
 
     @POST
