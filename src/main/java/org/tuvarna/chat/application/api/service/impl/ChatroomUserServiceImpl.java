@@ -115,12 +115,14 @@ public class ChatroomUserServiceImpl implements ChatroomUserService {
 
         validator.handle(cu);
 
-        Set<PersonDto> friendSet =
-                new HashSet<>(friendServiceApiClient.getAllFriendsOfPerson(
-                        requestingUserId));
+        Set<Long> friendSet = friendServiceApiClient.getAllFriendsOfPerson(
+                requestingUserId)
+                .stream()
+                .map(PersonDto::id)
+                .collect(Collectors.toSet());
 
         saveData.userToRole().keySet().forEach(userId -> {
-            if(!friendSet.contains(new PersonDto(userId))) {
+            if(!friendSet.contains(userId)) {
                 throw new UserNotAllowedException("");
             }
         });

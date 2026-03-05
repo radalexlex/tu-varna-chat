@@ -14,6 +14,22 @@ import java.util.List;
 @RegisterRestClient
 public interface FriendServiceApiClient {
 
+    @POST
+    @Path("/create")
+    boolean createUser(CreateUserRequest request);
+
+    @PUT
+    @Path("/{userId}/name")
+    boolean updateName(@PathParam("userId") long userId, UpdateNameRequest request);
+
+    @GET
+    @Path("{userId}/search/{page}")
+    List<PersonDto> searchPeople(
+            @PathParam("userId") long userId,
+            @PathParam("page") int page,
+            @QueryParam("query") String query
+    );
+
     @GET
     @Path("{userId}/friends/{page}")
     List<PersonDto> getFriendsOfPerson(
@@ -76,6 +92,17 @@ public interface FriendServiceApiClient {
             @PathParam("userA") long userA,
             @PathParam("userB") long userB
     );
+
+    class CreateUserRequest {
+        public long userId;
+        public String name;
+        public long facultyNumber;
+    }
+
+    class UpdateNameRequest {
+        public String newName;
+    }
+
 
     class UserAction {
         public long userA;
