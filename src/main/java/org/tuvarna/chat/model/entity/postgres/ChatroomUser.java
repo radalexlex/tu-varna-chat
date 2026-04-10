@@ -24,7 +24,12 @@ import java.time.Instant;
                 @Index(
                         name = "chatroom_id_status_join_time_index",
                         columnList = "chatroom_id, status, join_time ASC"
+                ),
+                @Index(
+                        name = "user_id_last_read_index",
+                        columnList = "user_id, last_read"
                 )
+
         }
 )
 public class ChatroomUser {
@@ -78,6 +83,10 @@ public class ChatroomUser {
     )
     @Enumerated(EnumType.STRING)
     private MembershipStatus status;
+    @Column(
+            name = "last_read"
+    )
+    private Long lastRead;
 
     public ChatroomUser() {
     }
@@ -90,6 +99,14 @@ public class ChatroomUser {
         if (role == null) {
             role = ChatroomRole.MEMBER;
         }
+    }
+
+    public Long getLastRead() {
+        return lastRead;
+    }
+
+    public void setLastRead(Long lastRead) {
+        this.lastRead = lastRead;
     }
 
     public int getChatroomId() {

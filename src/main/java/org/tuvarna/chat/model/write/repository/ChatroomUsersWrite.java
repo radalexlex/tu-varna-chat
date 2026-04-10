@@ -26,4 +26,9 @@ public interface ChatroomUsersWrite {
     int changeRole(@Param("userId") long userId,
                    @Param("newRole") ChatroomRole role); // returns number of changed rows
 
+    @Query("update ChatroomUser cu set cu.lastRead = :newLastRead " +
+            "where cu.userId = :userId " +
+            "and coalesce(cu.lastRead, 0) < :newLastRead")
+    int updateLastRead(@Param("userId") long userId, @Param("newLastRead") long newLastRead);
+
 }

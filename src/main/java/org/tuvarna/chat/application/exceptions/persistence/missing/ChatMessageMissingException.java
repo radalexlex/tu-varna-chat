@@ -1,9 +1,9 @@
 package org.tuvarna.chat.application.exceptions.persistence.missing;
 
-import java.util.NoSuchElementException;
+import org.tuvarna.chat.application.exceptions.persistence.DataPersistenceException;
 
-public class ChatMessageMissingException extends NoSuchElementException {
-    public ChatMessageMissingException(String message) {
-        super(message);
+public class ChatMessageMissingException extends DataPersistenceException {
+    public ChatMessageMissingException(String cause) {
+        super(cause);
     }
 }

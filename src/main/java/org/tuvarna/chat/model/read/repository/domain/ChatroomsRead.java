@@ -2,7 +2,6 @@ package org.tuvarna.chat.model.read.repository.domain;
 
 import jakarta.data.repository.By;
 import jakarta.data.repository.Find;
-import jakarta.data.repository.Query;
 import jakarta.data.repository.Repository;
 import org.hibernate.StatelessSession;
 import org.hibernate.query.NativeQuery;

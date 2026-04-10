@@ -6,7 +6,6 @@ import jakarta.inject.Named;
 import org.tuvarna.chat.model.read.query.TotalQuery;
 import org.tuvarna.chat.model.read.query.handler.QueryHandler;
 import org.tuvarna.chat.model.read.repository.domain.ChatroomsRead;
-import org.tuvarna.chat.model.write.command.ChatroomCommand;
 
 import java.util.List;
 
@@ -23,7 +22,7 @@ public class ChatroomTotalQueryHandler implements QueryHandler<List<Integer>, To
 
     @Override
     public List<Integer> handleQuery(TotalQuery<Long> query) {
-        switch(query) {
+        switch (query) {
             case TotalQuery.GetAllForCommon(Long userId) -> {
                 return repository.findAllIdsByUserId(userId);
             }

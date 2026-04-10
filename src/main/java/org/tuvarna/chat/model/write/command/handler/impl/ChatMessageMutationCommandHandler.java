@@ -3,47 +3,43 @@ package org.tuvarna.chat.model.write.command.handler.impl;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
-import org.tuvarna.chat.model.write.command.ChatMessageCommand;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.tuvarna.chat.model.write.command.ChatMessageMutationCommand;
 import org.tuvarna.chat.model.write.command.handler.CommandHandler;
-import org.tuvarna.chat.model.write.dto.ChatMessageOperationalData;
 import org.tuvarna.chat.model.write.repository.ChatMessagesWrite;
 
-import java.util.List;
-
 @ApplicationScoped
-@Named("ChatMessageCommandHandler")
-public class ChatMessageCommandHandler implements CommandHandler<Integer, ChatMessageCommand> {
+@Named("ChatMessageMutationCommandHandler")
+public class ChatMessageMutationCommandHandler implements CommandHandler<Integer, ChatMessageMutationCommand> {
 
+    private static final Logger log = LoggerFactory.getLogger(ChatMessageMutationCommandHandler.class);
     ChatMessagesWrite chatMessagesWrite;
 
     @Inject
-    public ChatMessageCommandHandler(ChatMessagesWrite chatMessageWrite) {
+    public ChatMessageMutationCommandHandler(ChatMessagesWrite chatMessageWrite) {
         this.chatMessagesWrite = chatMessageWrite;
     }
 
     @Override
-    public Integer handleCommand(ChatMessageCommand command) {
+    public Integer handleCommand(ChatMessageMutationCommand command) {
         switch (command) {
-            case ChatMessageCommand.SendMessages(
-                    List<ChatMessageOperationalData> requestList
-            ) -> {
-
-                return chatMessagesWrite.insertMessages(requestList);
-
-            }
-            case ChatMessageCommand.ArchiveMessage(
+            case ChatMessageMutationCommand.ArchiveMessageMutation(
                     long messageId
             ) -> {
 
                 return chatMessagesWrite.archiveMessageById(messageId);
 
+
             }
-            case ChatMessageCommand.UpdateMessage(
+            case ChatMessageMutationCommand.UpdateMessageMutation(
                     long messageId,
                     String updatedContent
             ) -> {
 
+
                 return chatMessagesWrite.updateMessageById(messageId, updatedContent);
+
 
             }
         }

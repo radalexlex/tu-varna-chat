@@ -1,7 +1,6 @@
 package org.tuvarna.chat.model.write.command.handler.impl;
 
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.enterprise.inject.Default;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import org.tuvarna.chat.model.entity.postgres.ChatroomUser;
@@ -67,6 +66,11 @@ public class ChatroomUserCommandHandler implements CommandHandler<Integer, Chatr
             ) -> {
 
                 return chatroomUsersWrite.changeRole(userId, role);
+
+            }
+            case ChatroomUserCommand.UpdateReadStatus(long userId, Long newLastReadMessageId) -> {
+
+                return chatroomUsersWrite.updateLastRead(userId, newLastReadMessageId);
 
             }
 

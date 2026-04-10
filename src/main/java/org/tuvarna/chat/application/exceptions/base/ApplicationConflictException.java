@@ -4,4 +4,5 @@ public class ApplicationConflictException extends ApplicationException {
     public ApplicationConflictException(String message) {
         super(message);
     }
+
 }

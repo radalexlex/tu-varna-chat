@@ -4,6 +4,6 @@ import org.tuvarna.chat.application.exceptions.base.ApplicationValidationExcepti
 
 public class InvalidChatroomNameException extends ApplicationValidationException {
     public InvalidChatroomNameException(String message) {
-        super("[VALIDATION] Chatroom can't use this name. Exception: " + message);
+        super(message);
     }
 }

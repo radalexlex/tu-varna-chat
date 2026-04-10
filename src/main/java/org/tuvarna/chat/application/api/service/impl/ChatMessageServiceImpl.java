@@ -4,10 +4,19 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import jakarta.transaction.Transactional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.tuvarna.chat.application.api.service.ChatMessageService;
 import org.tuvarna.chat.application.api.service.ChatroomUserService;
 import org.tuvarna.chat.application.api.service.validation.UserValidationHelper;
+import org.tuvarna.chat.application.exceptions.base.ApplicationException;
 import org.tuvarna.chat.application.exceptions.page.PaginationException;
+import org.tuvarna.chat.application.exceptions.persistence.DataPersistenceException;
+import org.tuvarna.chat.application.exceptions.persistence.missing.ChatMessageMissingException;
+import org.tuvarna.chat.application.exceptions.service.ChatMessageServiceException;
+import org.tuvarna.chat.application.exceptions.validation.message.EmptyMessageContentException;
+import org.tuvarna.chat.application.exceptions.validation.message.MessageTooLongException;
+import org.tuvarna.chat.application.exceptions.validation.room.InvalidChatroomIdException;
 import org.tuvarna.chat.application.exceptions.violation.user.UserNotAllowedException;
 import org.tuvarna.chat.model.read.dto.ChatMessageElement;
 import org.tuvarna.chat.model.read.dto.ChatroomUserDetails;
@@ -15,61 +24,144 @@ import org.tuvarna.chat.model.read.dto.ContentPage;
 import org.tuvarna.chat.model.read.query.PageQuery;
 import org.tuvarna.chat.model.read.query.handler.QueryHandler;
 import org.tuvarna.chat.model.read.query.page.data.ChatMessagePageData;
-import org.tuvarna.chat.model.write.command.ChatMessageCommand;
+import org.tuvarna.chat.model.write.command.ChatMessageMutationCommand;
+import org.tuvarna.chat.model.write.command.ChatMessagePersistenceCommand;
 import org.tuvarna.chat.model.write.command.handler.CommandHandler;
 import org.tuvarna.chat.model.write.dto.ChatMessageOperationalData;
+import org.tuvarna.chat.model.write.dto.MessagePersistenceStatus;
+import org.tuvarna.chat.model.write.dto.enums.AckStatus;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @ApplicationScoped
 @Transactional
 public class ChatMessageServiceImpl implements ChatMessageService {
 
+    private static final Logger log = LoggerFactory.getLogger(ChatMessageServiceImpl.class);
     QueryHandler<ContentPage<ChatMessageElement>, PageQuery<Integer, ChatMessagePageData>> messageQueryHandler;
-    CommandHandler<Integer, ChatMessageCommand> commandHandler;
+    CommandHandler<Integer, ChatMessageMutationCommand> mutationCommandHandler;
+    CommandHandler<MessagePersistenceStatus, ChatMessagePersistenceCommand> persistenceCommandHandler;
     ChatroomUserService chatroomUserService;
 
     @Inject
     public ChatMessageServiceImpl(@Named("ChatMessagePageQueryHandler")
                                   QueryHandler<ContentPage<ChatMessageElement>, PageQuery<Integer, ChatMessagePageData>>
                                           messageQueryHandler,
-                                  @Named("ChatMessageCommandHandler")
-                                  CommandHandler<Integer, ChatMessageCommand> commandHandler,
+                                  @Named("ChatMessagePersistenceCommandHandler")
+                                  CommandHandler<MessagePersistenceStatus, ChatMessagePersistenceCommand> persistenceCommandHandler,
+                                  @Named("ChatMessageMutationCommandHandler")
+                                  CommandHandler<Integer, ChatMessageMutationCommand> mutationCommandHandler,
                                   ChatroomUserService chatroomUserService) {
         this.messageQueryHandler = messageQueryHandler;
-        this.commandHandler = commandHandler;
+        this.mutationCommandHandler = mutationCommandHandler;
+        this.persistenceCommandHandler = persistenceCommandHandler;
         this.chatroomUserService = chatroomUserService;
+
     }
 
     @Override
-    public int addMessages(List<ChatMessageOperationalData> saveData) {
+    public Map<AckStatus, List<ChatMessageOperationalData>> addMessages(
+            List<ChatMessageOperationalData> saveData) {
 
-        return commandHandler.handleCommand(new ChatMessageCommand
-                .SendMessages(saveData));
+        try {
+            if (saveData == null || saveData.isEmpty()) {
+                throw new EmptyMessageContentException(
+                        "Message list cannot be null or empty"
+                );
+            }
 
+            MessagePersistenceStatus status;
+
+            status = persistenceCommandHandler
+                    .handleCommand(new ChatMessagePersistenceCommand.SendMessages(saveData));
+
+            if (status.errorIndexes().length != saveData.size()) {
+                throw new DataPersistenceException("Mismatch between input and result");
+            }
+
+            if (!status.errored()) {
+                return Map.of(
+                        AckStatus.SUCCESS, saveData,
+                        AckStatus.FAILURE, new ArrayList<>()
+                );
+            }
+
+            Map<AckStatus, List<ChatMessageOperationalData>> result = Map.of(
+                    AckStatus.SUCCESS, new ArrayList<>(),
+                    AckStatus.FAILURE, new ArrayList<>()
+            );
+
+            boolean[] indexes = status.errorIndexes();
+
+            for (int i = 0; i < indexes.length; i++) {
+                if (indexes[i]) {
+                    result.get(AckStatus.FAILURE).add(saveData.get(i));
+                } else {
+                    result.get(AckStatus.SUCCESS).add(saveData.get(i));
+                }
+            }
+
+            return result;
+
+        } catch (ApplicationException e) {
+            throw new ChatMessageServiceException(e);
+        }
     }
 
     @Override
     public int archiveMessage(long requestingUserId,
                               ChatMessageElement message,
                               int chatroom) {
-        //TODO: check requesting user first
-
-        ChatroomUserDetails req = chatroomUserService.getUserDetailsForSelf(requestingUserId, chatroom);
-        boolean isSuper;
 
         try {
-            isSuper = UserValidationHelper.getSpecialUserValidator(
-                    req.chatroomId()).handle(req);
-        } catch (UserNotAllowedException e) {
-            isSuper = false;
-        }
+            if (chatroom <= 0) {
 
-        if (isSuper || (requestingUserId == message.senderUser())) {
-            return commandHandler.handleCommand(new ChatMessageCommand.ArchiveMessage(message.id()));
-        } else {
-            throw new UserNotAllowedException("");
+                throw new InvalidChatroomIdException(
+                        "Invalid chatroomId: " + chatroom
+                );
+            }
+
+            ChatroomUserDetails req =
+                    chatroomUserService.getUserDetailsForSelf(requestingUserId, chatroom);
+
+            UserValidationHelper.getUserChatroomPresenceValidator(chatroom).handle(req);
+
+            boolean isSuper;
+
+            try {
+                isSuper = UserValidationHelper
+                        .getSpecialUserValidator(chatroom)
+                        .handle(req);
+            } catch (UserNotAllowedException e) {
+                log.warn(e.getMessage());
+                isSuper = false;
+            }
+
+            if (isSuper || (requestingUserId == message.senderUser())) {
+                int updated = mutationCommandHandler.handleCommand(
+                        new ChatMessageMutationCommand.ArchiveMessageMutation(
+                                message.id())
+                );
+
+                if (updated == 0) {
+                    throw new ChatMessageMissingException(
+                            "Message " + message.id() + " not found or already archived"
+                    );
+                }
+
+                return updated;
+            }
+
+            throw new UserNotAllowedException(
+                    "User " + requestingUserId +
+                            " is not allowed to archive message " + message.id() +
+                            " in chatroom " + chatroom
+            );
+        } catch (ApplicationException e) {
+            throw new ChatMessageServiceException(e);
         }
     }
 
@@ -78,50 +170,92 @@ public class ChatMessageServiceImpl implements ChatMessageService {
                              ChatMessageElement message,
                              int chatroomId,
                              String newContent) {
-        ChatroomUserDetails req = chatroomUserService.getUserDetailsForSelf(requestingUserId, chatroomId);
+        try {
+            if (newContent == null || newContent.isBlank()) {
+                throw new ChatMessageServiceException(new EmptyMessageContentException(
+                        "Message content cannot be null or empty"
+                ));
+            }
 
-        if(req.userId() != message.senderUser()) {
-            throw new UserNotAllowedException("");
+            if (newContent.length() > 5000) {
+                throw new ChatMessageServiceException(new MessageTooLongException(
+                        "Message content exceeds maximum allowed length " +
+                                "(5000 characters)"
+                ));
+            }
+
+            ChatroomUserDetails req = chatroomUserService.getUserDetailsForSelf(requestingUserId, chatroomId);
+
+            if (req.userId() != message.senderUser()) {
+                throw new ChatMessageServiceException(
+                        new UserNotAllowedException("User is not allowed to" +
+                                " update this message")
+                );
+            }
+
+            UserValidationHelper.getUserChatroomPresenceValidator(chatroomId).handle(req);
+
+            int updated = mutationCommandHandler.handleCommand(
+                    new ChatMessageMutationCommand.UpdateMessageMutation(
+                            message.id(),
+                            newContent
+                    )
+            );
+
+            if (updated == 0) {
+                throw new ChatMessageMissingException(
+                        "Message " + message.id() + " not found or already deleted"
+                );
+            }
+
+            return updated;
+        } catch (ApplicationException e) {
+            throw new ChatMessageServiceException(e);
         }
-
-        UserValidationHelper.getUserChatroomPresenceValidator(chatroomId).handle(req);
-
-        return commandHandler.handleCommand(new ChatMessageCommand.UpdateMessage(message.id(), newContent));
     }
 
     @Override
     public ContentPage<ChatMessageElement> getMessagePage(long requestingUserId,
                                                           int chatroomId,
                                                           Instant oldestTimestamp,
-                                                          Integer oldestId) {
+                                                          Integer oldestId,
+                                                          boolean requestForOlder) {
+        try {
 
-        ChatroomUserDetails cu =
-                chatroomUserService
-                        .getUserDetailsForSelf(
-                                requestingUserId,
-                                chatroomId);
+            ChatroomUserDetails cu =
+                    chatroomUserService
+                            .getUserDetailsForSelf(
+                                    requestingUserId,
+                                    chatroomId);
 
-        UserValidationHelper.getUserChatroomPresenceValidator(chatroomId).handle(cu);
+            UserValidationHelper.getUserChatroomPresenceValidator(chatroomId).handle(cu);
 
-        if (oldestTimestamp == null && oldestId == null) {
-            return messageQueryHandler.handleQuery(
-                    new PageQuery.GetPage<>(
-                            chatroomId,
-                            null));
+            if (oldestTimestamp == null && oldestId == null) {
+                return messageQueryHandler.handleQuery(
+                        new PageQuery.GetPage<>(
+                                chatroomId,
+                                null));
 
-        } else if (oldestTimestamp != null && oldestId != null) {
-            return messageQueryHandler.handleQuery(
-                    new PageQuery.GetPage<>(
-                            chatroomId,
-                            new ChatMessagePageData(
-                                    oldestTimestamp,
-                                    oldestId))
-            );
-        } else {
-            throw new PaginationException("");
+            } else if (oldestTimestamp != null && oldestId != null) {
+                return messageQueryHandler.handleQuery(
+                        new PageQuery.GetPage<>(
+                                chatroomId,
+                                new ChatMessagePageData(
+                                        oldestTimestamp,
+                                        oldestId,
+                                        requestForOlder))
+                );
+
+            } else {
+                throw new PaginationException(
+                        "Invalid pagination parameters: both oldestTimestamp " +
+                                "and oldestId must be provided together " +
+                                "or both must be null. Provided: { oldestTimestamp: " + oldestTimestamp +
+                                ", oldestId: " + oldestId + " }"
+                );
+            }
+        } catch (ApplicationException e) {
+            throw new ChatMessageServiceException(e);
         }
-
-
     }
-
 }

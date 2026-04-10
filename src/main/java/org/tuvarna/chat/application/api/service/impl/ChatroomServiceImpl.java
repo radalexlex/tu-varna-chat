@@ -7,7 +7,12 @@ import jakarta.transaction.Transactional;
 import org.tuvarna.chat.application.api.service.ChatroomService;
 import org.tuvarna.chat.application.api.service.ChatroomUserService;
 import org.tuvarna.chat.application.api.service.validation.UserValidationHelper;
+import org.tuvarna.chat.application.exceptions.base.ApplicationException;
 import org.tuvarna.chat.application.exceptions.page.PaginationException;
+import org.tuvarna.chat.application.exceptions.persistence.missing.ChatroomMissingException;
+import org.tuvarna.chat.application.exceptions.service.ChatroomServiceException;
+import org.tuvarna.chat.application.exceptions.validation.room.InvalidChatroomIdException;
+import org.tuvarna.chat.application.exceptions.validation.room.InvalidChatroomNameException;
 import org.tuvarna.chat.model.read.dto.ChatroomEventfulElement;
 import org.tuvarna.chat.model.read.dto.ChatroomOverview;
 import org.tuvarna.chat.model.read.dto.ChatroomUserDetails;
@@ -38,14 +43,14 @@ public class ChatroomServiceImpl implements ChatroomService {
 
     @Inject
     public ChatroomServiceImpl(@Named("ChatroomQueryHandler")
-                           QueryHandler<ChatroomOverview, DetailQuery<Integer>> roomQueryHandler,
+                               QueryHandler<ChatroomOverview, DetailQuery<Integer>> roomQueryHandler,
                                @Named("ChatroomEventfulPageQueryHandler")
-                           QueryHandler<ContentPage<ChatroomEventfulElement>,
-                                   PageQuery<Long, ChatroomEventfulPageData>> roomEventfulQueryHandler,
+                               QueryHandler<ContentPage<ChatroomEventfulElement>,
+                                       PageQuery<Long, ChatroomEventfulPageData>> roomEventfulQueryHandler,
                                @Named("ChatroomCommandHandler")
-                           CommandHandler<Integer, ChatroomCommand> commandHandler,
+                               CommandHandler<Integer, ChatroomCommand> commandHandler,
                                @Named("ChatroomTotalQueryHandler")
-                            QueryHandler<List<Integer>, TotalQuery<Long>> totalQueryHandler,
+                               QueryHandler<List<Integer>, TotalQuery<Long>> totalQueryHandler,
                                ChatroomUserService chatroomUserService,
                                UserValidationHelper userValidationHelper) {
         this.roomQueryHandler = roomQueryHandler;
@@ -57,22 +62,49 @@ public class ChatroomServiceImpl implements ChatroomService {
 
     @Override
     public int createChatroom(long adminId, String name) {
+        try {
 
-        int newRoomId = commandHandler.handleCommand(new ChatroomCommand.CreateChatroom(name));
+            if (name == null || name.isBlank()) {
+                throw new InvalidChatroomNameException("Chatroom name cannot be empty");
+            }
 
-        return chatroomUserService.addFirstChatroomUser(adminId, newRoomId);
+            int newRoomId = commandHandler.handleCommand(
+                    new ChatroomCommand.CreateChatroom(name)
+            );
 
+            return chatroomUserService.addFirstChatroomUser(adminId, newRoomId);
+
+        } catch (ApplicationException e) {
+            throw new ChatroomServiceException(e);
+        }
     }
 
     @Override
     public int archiveChatroom(long userId, int chatroomId) {
+        try {
 
-        UserValidationHelper.getSpecialUserValidator(chatroomId)
-                .handle(chatroomUserService.getUserDetailsForSelf(userId, chatroomId));
+            if (chatroomId <= 0) {
+                throw new InvalidChatroomIdException("Invalid chatroomId: " + chatroomId);
+            }
 
-        return commandHandler.handleCommand(new ChatroomCommand
-                .ArchiveChatroom(chatroomId));
+            UserValidationHelper.getSpecialUserValidator(chatroomId)
+                    .handle(chatroomUserService.getUserDetailsForSelf(userId, chatroomId));
 
+            int result = commandHandler.handleCommand(
+                    new ChatroomCommand.ArchiveChatroom(chatroomId)
+            );
+
+            if (result == 0) {
+                throw new ChatroomMissingException(
+                        "Chatroom " + chatroomId + " not found or already archived"
+                );
+            }
+
+            return result;
+
+        } catch (ApplicationException e) {
+            throw new ChatroomServiceException(e);
+        }
     }
 
     @Override
@@ -82,52 +114,69 @@ public class ChatroomServiceImpl implements ChatroomService {
             Integer latestChatroomIdOnPage,
             Long latestChatMessageIdOnPage) {
 
-        if (latestChatMessageIdOnPage == null
-                && latestChatroomIdOnPage == null
-                && latestEventTimeOnPage == null) {
+        try {
 
-            return roomEventfulQueryHandler.handleQuery(
-                    new PageQuery.GetPage<>(userId, null));
+            if (latestChatMessageIdOnPage == null
+                    && latestChatroomIdOnPage == null
+                    && latestEventTimeOnPage == null) {
 
-        } else if (latestChatMessageIdOnPage != null
-                && latestChatroomIdOnPage != null
-                && latestEventTimeOnPage != null) {
+                return roomEventfulQueryHandler.handleQuery(
+                        new PageQuery.GetPage<>(userId, null));
 
-            return roomEventfulQueryHandler.handleQuery(
-                    new PageQuery.GetPage<>(
-                            userId,
-                            new ChatroomEventfulPageData(
-                            latestEventTimeOnPage,
-                            latestChatroomIdOnPage,
-                            latestChatMessageIdOnPage)));
+            } else if (latestChatMessageIdOnPage != null
+                    && latestChatroomIdOnPage != null
+                    && latestEventTimeOnPage != null) {
 
-        } else {
-            throw new PaginationException("");
+                return roomEventfulQueryHandler.handleQuery(
+                        new PageQuery.GetPage<>(
+                                userId,
+                                new ChatroomEventfulPageData(
+                                        latestEventTimeOnPage,
+                                        latestChatroomIdOnPage,
+                                        latestChatMessageIdOnPage)));
+
+            } else {
+                throw new PaginationException("Invalid pagination parameters: { "
+                        + userId + " "
+                        + latestChatMessageIdOnPage + " "
+                        + latestChatroomIdOnPage + " "
+                        + latestEventTimeOnPage + " }");
+            }
+
+        } catch (ApplicationException e) {
+            throw new ChatroomServiceException(e);
         }
-
     }
-
 
     @Override
-    public ChatroomOverview getChatroomOverview(
-            long requestingUserId,
-            int chatroomId) {
+    public ChatroomOverview getChatroomOverview(long requestingUserId, int chatroomId) {
+        try {
 
-        ChatroomUserDetails cu =
-                chatroomUserService.getUserDetailsForSelf(
-                        requestingUserId,
-                        chatroomId);
+            ChatroomUserDetails cu =
+                    chatroomUserService.getUserDetailsForSelf(requestingUserId, chatroomId);
 
-        UserValidationHelper.getUserChatroomPresenceValidator(chatroomId).handle(cu);
+            UserValidationHelper
+                    .getUserChatroomPresenceValidator(chatroomId)
+                    .handle(cu);
 
-        return roomQueryHandler.handleQuery(
-                new DetailQuery.GetData<>(chatroomId));
+            return roomQueryHandler.handleQuery(
+                    new DetailQuery.GetData<>(chatroomId)
+            );
 
+        } catch (ApplicationException e) {
+            throw new ChatroomServiceException(e);
+        }
     }
 
+    @Override
     public List<Integer> getChatroomIdsForUser(long requestingUserId) {
-
-        return totalQueryHandler.handleQuery(new TotalQuery.GetAllForCommon<>(requestingUserId));
+        try {
+            return totalQueryHandler.handleQuery(
+                    new TotalQuery.GetAllForCommon<>(requestingUserId)
+            );
+        } catch (ApplicationException e) {
+            throw new ChatroomServiceException(e);
+        }
     }
 
 

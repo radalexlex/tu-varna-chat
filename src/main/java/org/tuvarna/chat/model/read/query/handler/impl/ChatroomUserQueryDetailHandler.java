@@ -26,8 +26,9 @@ public class ChatroomUserQueryDetailHandler implements QueryHandler<ChatroomUser
     public ChatroomUserDetails handleQuery(DetailQuery<Pair<Long, Integer>> query) {
 
         switch (query) {
-            case DetailQuery.GetData<Pair<Long,Integer>>(
-                    Pair<Long, Integer> userToChatroom) -> {
+            case DetailQuery.GetData<Pair<Long, Integer>>(
+                    Pair<Long, Integer> userToChatroom
+            ) -> {
                 ChatroomUser cu = repository
                         .getUserByUserIdAndChatroomId(userToChatroom.a(), userToChatroom.b())
                         .orElseThrow(() -> new ChatroomUserNotFoundException(
@@ -41,7 +42,8 @@ public class ChatroomUserQueryDetailHandler implements QueryHandler<ChatroomUser
                         cu.getUserId(),
                         cu.getRole().toString(),
                         cu.getStatus().toString(),
-                        cu.getJoinTime().toString());
+                        cu.getJoinTime().toString(),
+                        cu.getLastRead());
             }
         }
     }

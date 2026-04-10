@@ -1,125 +1,82 @@
 package org.tuvarna.chat.application.api.controller;
 
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.*;
 import jakarta.ws.rs.*;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Request;
 import jakarta.ws.rs.core.Response;
-import org.tuvarna.chat.application.api.service.ChatroomService;
-import org.tuvarna.chat.application.api.service.ChatroomUserService;
-import org.tuvarna.chat.application.exceptions.violation.user.UserNotAllowedException;
-import org.tuvarna.chat.model.entity.postgres.enums.ChatroomRole;
 import org.tuvarna.chat.model.read.dto.ChatroomUserDetails;
 import org.tuvarna.chat.model.read.dto.ContentPage;
-import org.tuvarna.chat.model.write.dto.ChatroomUsersSaveData;
 
-import java.time.Instant;
 import java.util.Map;
-import java.util.stream.Collectors;
 
-
-@ApplicationScoped
-@Path("/chatroom-users")
-@Consumes(MediaType.APPLICATION_JSON)
-@Produces(MediaType.APPLICATION_JSON)
-public class ChatroomUserResource {
-
-    public record AddUsersRequest(Map<Long, String> usersWithRoles) {}
-
-    public record UpdateRoleRequest(String updatedRole) {}
-
-    public record UpdateMembershipStatusRequest(String updatedStatus) {}
-
-    @Inject
-    ChatroomUserService chatroomUserService;
+public interface ChatroomUserResource {
 
     @GET
     @Path("/{chatroomId}/users")
-    public ContentPage<ChatroomUserDetails> getUsers(
-            @QueryParam("userId") long requestingUserId,
+    ContentPage<ChatroomUserDetails> getUsers(
+            @QueryParam("userId") @Positive long requestingUserId,
             @QueryParam("oldestAdditionTimestamp") String oldestAdditionTimestamp,
             @QueryParam("oldestAdditionId") Integer oldestAdditionId,
-            @PathParam("chatroomId") int chatroomId) {
-
-        Instant parsedTimestamp = oldestAdditionTimestamp != null
-                ? Instant.parse(oldestAdditionTimestamp)
-                : null;
-
-                return chatroomUserService.getUsers(
-                        requestingUserId,
-                        chatroomId,
-                        parsedTimestamp,
-                        oldestAdditionId
-                );
-
-    }
+            @PathParam("chatroomId") @Positive int chatroomId);
 
     @POST
     @Path("/{chatroomId}/users")
-    public Response addUsers(
-            @QueryParam("userId") long requestingUserId,
-            @PathParam("chatroomId") int chatroomId,
-            AddUsersRequest request) {
-
-        Map<Long, ChatroomRole> userToRole;
-
-        try {
-            userToRole = request.usersWithRoles().entrySet()
-                    .stream().collect(Collectors.toMap(
-                            Map.Entry::getKey,
-                            e -> ChatroomRole.valueOf(
-                                    e.getValue())));
-        } catch (EnumConstantNotPresentException e) {
-            return Response.status(Response.Status.BAD_REQUEST).build();
-        }
-
-        ChatroomUsersSaveData saveData =
-                new ChatroomUsersSaveData(
-                        chatroomId,
-                        userToRole
-                );
-
-        int result = chatroomUserService.addUsers(requestingUserId, saveData);
-
-        return Response.status(Response.Status.CREATED)
-                .entity(result)
-                .build();
-    }
+    Response addUsers(
+            @QueryParam("userId") @Positive long requestingUserId,
+            @PathParam("chatroomId") @Positive int chatroomId,
+            @Valid AddUsersRequest request);
 
     @PUT
     @Path("/{chatroomId}/users/{affectedUserId}/role")
-    public Response changeUserRole(
-            @QueryParam("userId") long requestingUserId,
-            @PathParam("chatroomId") int chatroomId,
-            @PathParam("affectedUserId") long affectedUserId,
-            UpdateRoleRequest request) {
-
-        int result = chatroomUserService.changeUserRole(
-                requestingUserId,
-                chatroomId,
-                affectedUserId,
-                request.updatedRole()
-        );
-
-        return Response.ok(result).build();
-    }
+    Response changeUserRole(
+            @QueryParam("userId") @Positive long requestingUserId,
+            @PathParam("chatroomId") @Positive int chatroomId,
+            @PathParam("affectedUserId") @Positive long affectedUserId,
+            @Valid UpdateRoleRequest request);
 
     @PUT
     @Path("/{chatroomId}/users/membership-status")
-    public Response changeUserMembershipStatus(
-            @QueryParam("userId") long requestingUserId,
-            @QueryParam("affectedUserId") long affectedUserId,
-            @PathParam("chatroomId") int chatroomId,
-            UpdateMembershipStatusRequest request) {
+    Response changeUserMembershipStatus(
+            @QueryParam("userId") @Positive long requestingUserId,
+            @QueryParam("affectedUserId") @Positive long affectedUserId,
+            @PathParam("chatroomId") @Positive int chatroomId,
+            @Valid UpdateMembershipStatusRequest request);
 
-        int result = chatroomUserService.changeUserMembershipStatus(
-                requestingUserId,
-                chatroomId,
-                affectedUserId,
-                request.updatedStatus()
-        );
+    @PUT
+    @Path("/{chatroomId}/users/update-last-read")
+    Response updateLastRead(
+            @PathParam("chatroomId") @Positive int chatroomId,
+            @QueryParam("userId") @Positive long userId,
+            @Valid UpdateLastReadStateRequest request);
 
-        return Response.ok(result).build();
+    record UpdateLastReadStateRequest(
+
+            @PositiveOrZero
+            long newLastReadState
+    ) {
+    }
+
+    record AddUsersRequest(
+
+            @NotNull
+            @Size(min = 1)
+            Map<
+                    @NotNull @Positive Long,
+                    @NotBlank String> usersWithRoles
+    ) {
+    }
+
+    record UpdateRoleRequest(
+
+            @NotBlank
+            String updatedRole
+    ) {
+    }
+
+    record UpdateMembershipStatusRequest(
+
+            @NotBlank
+            String updatedStatus
+    ) {
     }
 }

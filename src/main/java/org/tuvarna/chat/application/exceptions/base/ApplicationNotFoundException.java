@@ -6,4 +6,5 @@ public class ApplicationNotFoundException extends EmptyResultException {
     public ApplicationNotFoundException(String message) {
         super(message);
     }
+
 }

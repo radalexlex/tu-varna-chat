@@ -103,7 +103,6 @@ public interface FriendServiceApiClient {
         public String newName;
     }
 
-
     class UserAction {
         public long userA;
         public long userB;

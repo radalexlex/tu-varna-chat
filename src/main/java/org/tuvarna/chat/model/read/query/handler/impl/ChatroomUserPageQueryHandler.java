@@ -40,7 +40,8 @@ public class ChatroomUserPageQueryHandler implements QueryHandler<ContentPage<Ch
                         d.getUserId(),
                         d.getRole().toString(),
                         d.getStatus().toString(),
-                        d.getJoinTime().toString()))
+                        d.getJoinTime().toString(),
+                        d.getLastRead()))
                 .collect(Collectors.toList());
     }
 

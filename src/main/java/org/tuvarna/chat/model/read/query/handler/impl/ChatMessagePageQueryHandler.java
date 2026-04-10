@@ -5,6 +5,7 @@ import jakarta.data.page.PageRequest;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
+import org.tuvarna.chat.application.exceptions.page.PaginationException;
 import org.tuvarna.chat.model.entity.postgres.ChatMessage;
 import org.tuvarna.chat.model.read.dto.ChatMessageElement;
 import org.tuvarna.chat.model.read.dto.ContentPage;
@@ -33,13 +34,23 @@ public class ChatMessagePageQueryHandler implements QueryHandler<ContentPage<Cha
             List<ChatMessage> entityInput) {
 
         return entityInput.stream()
-                .map(m -> new ChatMessageElement(
-                        m.getId(),
-                        m.getClientMessageId().toString(),
-                        m.getSenderUserId(),
-                        m.getTimeSent().toString(),
-                        m.getContent()))
-                .collect(Collectors.toList());
+                .map((m) -> {
+                    if (!m.isDeleted()) {
+                        return new ChatMessageElement(
+                                m.getId(),
+                                m.getClientMessageId().toString(),
+                                m.getSenderUserId(),
+                                m.getTimeSent().toString(),
+                                m.getContent());
+                    } else {
+                        return new ChatMessageElement(
+                                m.getId(),
+                                m.getClientMessageId().toString(),
+                                m.getSenderUserId(),
+                                m.getTimeSent().toString(),
+                                null);
+                    }
+                }).collect(Collectors.toList());
     }
 
     @Override
@@ -54,19 +65,27 @@ public class ChatMessagePageQueryHandler implements QueryHandler<ContentPage<Cha
 
                 if (data == null) {
                     pageRequest = PageRequest.ofSize(PAGE_SIZE);
+                    p = repository.findByChatroomIdOlder(chatroomId, pageRequest);
                 } else {
                     pageRequest = PageRequest.ofSize(PAGE_SIZE)
                             .beforeCursor(PageRequest
                                     .Cursor.forKey(
-                                            data.oldestTimestamp(),
-                                            data.oldestId()));
+                                            data.lastTimestamp(),
+                                            data.lastId()));
+                    if (data.requestForOlder()) {
+                        p = repository.findByChatroomIdOlder(chatroomId, pageRequest);
+                    } else {
+                        p = repository.findByChatroomIdNewer(chatroomId, pageRequest);
+                    }
                 }
 
-                p = repository.findByChatroomIdAndDeleted(chatroomId, false, pageRequest);
-
-                return new ContentPage<ChatMessageElement>(
-                        toElements(p.content()),
-                        p.hasPrevious());
+                if (p != null) {
+                    return new ContentPage<ChatMessageElement>(
+                            toElements(p.content()),
+                            p.hasPrevious());
+                } else {
+                    throw new PaginationException("Can't fetch content page");
+                }
             }
         }
     }

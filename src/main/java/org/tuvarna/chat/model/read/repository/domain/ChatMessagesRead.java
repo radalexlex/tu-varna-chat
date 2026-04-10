@@ -21,9 +21,14 @@ public interface ChatMessagesRead {
     @Find
     @OrderBy(value = "timeSent", descending = true)
     @OrderBy(value = "id", descending = true)
-    CursoredPage<ChatMessage> findByChatroomIdAndDeleted(int chatroomId,
-                                                         boolean deleted,
-                                                         PageRequest pageRequest);
+    CursoredPage<ChatMessage> findByChatroomIdOlder(int chatroomId,
+                                                    PageRequest pageRequest);
+
+    @Find
+    @OrderBy(value = "timeSent", descending = false)
+    @OrderBy(value = "id", descending = false)
+    CursoredPage<ChatMessage> findByChatroomIdNewer(int chatroomId,
+                                                    PageRequest pageRequest);
 
 
 }

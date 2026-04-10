@@ -7,7 +7,8 @@ import org.tuvarna.chat.model.write.dto.ChatroomUsersSaveData;
 public sealed interface ChatroomUserCommand permits
         ChatroomUserCommand.ChangeUserRole,
         ChatroomUserCommand.ChangeMembershipStatus,
-        ChatroomUserCommand.AddUsers {
+        ChatroomUserCommand.AddUsers,
+        ChatroomUserCommand.UpdateReadStatus {
 
     record AddUsers(ChatroomUsersSaveData saveData) implements ChatroomUserCommand {
     }
@@ -16,6 +17,9 @@ public sealed interface ChatroomUserCommand permits
     }
 
     record ChangeMembershipStatus(long userId, MembershipStatus status) implements ChatroomUserCommand {
+    }
+
+    record UpdateReadStatus(long userId, Long newLastReadMessageId) implements ChatroomUserCommand {
     }
 
 }

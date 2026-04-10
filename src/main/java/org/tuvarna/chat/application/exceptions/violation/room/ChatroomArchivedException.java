@@ -1,6 +1,8 @@
 package org.tuvarna.chat.application.exceptions.violation.room;
 
-public class ChatroomArchivedException extends RuntimeException {
+import org.tuvarna.chat.application.exceptions.base.ApplicationRuleViolationException;
+
+public class ChatroomArchivedException extends ApplicationRuleViolationException {
     public ChatroomArchivedException(String message) {
         super(message);
     }
