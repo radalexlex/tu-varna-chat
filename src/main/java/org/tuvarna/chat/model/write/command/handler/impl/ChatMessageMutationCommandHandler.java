@@ -30,16 +30,13 @@ public class ChatMessageMutationCommandHandler implements CommandHandler<Integer
 
                 return chatMessagesWrite.archiveMessageById(messageId);
 
-
             }
             case ChatMessageMutationCommand.UpdateMessageMutation(
                     long messageId,
                     String updatedContent
             ) -> {
 
-
                 return chatMessagesWrite.updateMessageById(messageId, updatedContent);
-
 
             }
         }

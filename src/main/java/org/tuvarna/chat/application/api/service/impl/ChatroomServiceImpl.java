@@ -13,6 +13,7 @@ import org.tuvarna.chat.application.exceptions.persistence.missing.ChatroomMissi
 import org.tuvarna.chat.application.exceptions.service.ChatroomServiceException;
 import org.tuvarna.chat.application.exceptions.validation.room.InvalidChatroomIdException;
 import org.tuvarna.chat.application.exceptions.validation.room.InvalidChatroomNameException;
+import org.tuvarna.chat.model.entity.postgres.Chatroom;
 import org.tuvarna.chat.model.read.dto.ChatroomEventfulElement;
 import org.tuvarna.chat.model.read.dto.ChatroomOverview;
 import org.tuvarna.chat.model.read.dto.ChatroomUserDetails;
@@ -73,6 +74,70 @@ public class ChatroomServiceImpl implements ChatroomService {
             );
 
             return chatroomUserService.addFirstChatroomUser(adminId, newRoomId);
+
+        } catch (ApplicationException e) {
+            throw new ChatroomServiceException(e);
+        }
+    }
+
+    @Override
+    public int updateChatroomName(long userId, int chatroomId, String newName) {
+        try {
+
+            if (chatroomId <= 0) {
+                throw new InvalidChatroomIdException("Invalid chatroomId: " + chatroomId);
+            }
+
+            if (newName == null || newName.isBlank()) {
+                throw new InvalidChatroomNameException("Chatroom name cannot be empty");
+            }
+
+            ChatroomUserDetails cu =
+                    chatroomUserService.getUserDetailsForSelf(userId, chatroomId);
+
+            UserValidationHelper
+                    .getSpecialUserValidator(chatroomId)
+                    .handle(cu);
+
+            int updateResult = commandHandler.handleCommand(
+                    new ChatroomCommand.UpdateChatroomName(chatroomId, newName)
+            );
+
+            if (updateResult == 0) {
+                throw new ChatroomMissingException(
+                        "Chatroom " + chatroomId + " not found"
+                );
+            }
+
+            return updateResult;
+
+        } catch (ApplicationException e) {
+            throw new ChatroomServiceException(e);
+        }
+    }
+
+    @Override
+    public int updateLastReadStatus(long userId, int chatroomId, long newLastRead) {
+        try {
+
+            if (chatroomId <= 0) {
+                throw new InvalidChatroomIdException("Invalid chatroomId: " + chatroomId);
+            }
+
+            if (newLastRead < 0) {
+                throw new PaginationException("Invalid last read value: " + newLastRead);
+            }
+
+            ChatroomUserDetails cu =
+                    chatroomUserService.getUserDetailsForSelf(userId, chatroomId);
+
+            UserValidationHelper
+                    .getUserChatroomPresenceValidator(chatroomId)
+                    .handle(cu);
+
+            return commandHandler.handleCommand(
+                    new ChatroomCommand.UpdateLastRead(chatroomId, newLastRead)
+            );
 
         } catch (ApplicationException e) {
             throw new ChatroomServiceException(e);

@@ -34,7 +34,8 @@ public class ChatroomQueryDetailHandler implements QueryHandler<ChatroomOverview
                 return new ChatroomOverview(
                         chatroomId,
                         c.getName(),
-                        c.getCreatedAt().toString());
+                        c.getCreatedAt().toString(),
+                        c.getLastRead());
             }
         }
     }

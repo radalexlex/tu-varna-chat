@@ -68,7 +68,7 @@ public class ChatMessage {
     )
     private long senderUserId;
     @Column(
-            length = 4000,
+            length = 5000,
             nullable = false
     )
     private String content;

@@ -76,10 +76,12 @@ public class ChatMessageServiceImpl implements ChatMessageService {
             MessagePersistenceStatus status;
 
             status = persistenceCommandHandler
-                    .handleCommand(new ChatMessagePersistenceCommand.SendMessages(saveData));
+                    .handleCommand(new ChatMessagePersistenceCommand
+                            .SendMessages(saveData));
 
             if (status.errorIndexes().length != saveData.size()) {
-                throw new DataPersistenceException("Mismatch between input and result");
+                throw new DataPersistenceException("Mismatch between " +
+                        "input and result");
             }
 
             if (!status.errored()) {

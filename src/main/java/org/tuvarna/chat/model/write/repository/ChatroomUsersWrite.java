@@ -29,6 +29,7 @@ public interface ChatroomUsersWrite {
     @Query("update ChatroomUser cu set cu.lastRead = :newLastRead " +
             "where cu.userId = :userId " +
             "and coalesce(cu.lastRead, 0) < :newLastRead")
+    @Update
     int updateLastRead(@Param("userId") long userId, @Param("newLastRead") long newLastRead);
 
 }

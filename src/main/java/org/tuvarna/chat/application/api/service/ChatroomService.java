@@ -21,4 +21,8 @@ public interface ChatroomService {
     ChatroomOverview getChatroomOverview(long requestingUserId, int chatroomId);
 
     List<Integer> getChatroomIdsForUser(long requestingUserId);
+
+    int updateChatroomName(long userId, int chatroomId, String newName);
+
+    int updateLastReadStatus(long userId, int chatroomId, long newLastRead);
 }

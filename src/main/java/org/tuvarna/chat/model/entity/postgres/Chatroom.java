@@ -36,6 +36,10 @@ public class Chatroom {
     @CreationTimestamp
     private Instant createdAt;
     @Column(
+            name = "last_read"
+    )
+    private Long lastRead;
+    @Column(
             nullable = false,
             updatable = true
     )
@@ -49,6 +53,14 @@ public class Chatroom {
         if (deleted) {
             deleted = false;
         }
+    }
+
+    public Long getLastRead() {
+        return lastRead;
+    }
+
+    public void setLastRead(Long lastRead) {
+        this.lastRead = lastRead;
     }
 
     public int getId() {

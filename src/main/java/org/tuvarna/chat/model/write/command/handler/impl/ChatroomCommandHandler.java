@@ -48,6 +48,25 @@ public class ChatroomCommandHandler implements CommandHandler<Integer, ChatroomC
                 return chatroomWrite.archiveChatroomById(chatroomId);
 
             }
+
+            case ChatroomCommand.UpdateLastRead(int chatroomId, long newLastMessage) -> {
+
+                return chatroomWrite.updateLastRead(chatroomId, newLastMessage);
+
+            }
+
+            case ChatroomCommand.UpdateChatroomName(int chatroomId, String newName) -> {
+
+                int updated = chatroomWrite.updateName(chatroomId, newName);
+
+                if (updated == 0) {
+                    throw new ChatroomMissingException(
+                            "Chatroom " + chatroomId + " not found"
+                    );
+                }
+
+                return updated;
+            }
         }
     }
 }
