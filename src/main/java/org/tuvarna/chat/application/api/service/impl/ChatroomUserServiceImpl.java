@@ -235,12 +235,16 @@ public class ChatroomUserServiceImpl implements ChatroomUserService {
     @Override
     public int addFirstChatroomUser(long userId, int chatroomId) {
 
-        return commandHandler.handleCommand(
-                new ChatroomUserCommand.AddUsers(
-                        new ChatroomUsersSaveData(
-                                chatroomId,
-                                Map.of(userId, ChatroomRole.ADMIN)
-                        )));
+        try {
+            return commandHandler.handleCommand(
+                    new ChatroomUserCommand.AddUsers(
+                            new ChatroomUsersSaveData(
+                                    chatroomId,
+                                    Map.of(userId, ChatroomRole.ADMIN)
+                            )));
+        } catch (ApplicationException e) {
+            throw new ChatroomUserServiceException(e);
+        }
 
     }
 

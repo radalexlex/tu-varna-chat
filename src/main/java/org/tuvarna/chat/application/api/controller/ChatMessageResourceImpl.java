@@ -3,6 +3,7 @@ package org.tuvarna.chat.application.api.controller;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -29,7 +30,7 @@ public class ChatMessageResourceImpl implements ChatMessageResource {
     @PUT
     @Path("/update")
     @Override
-    public Response updateMessage(@Valid MessageUpdateRequest actionRequest) {
+    public Response updateMessage(@Valid @NotNull MessageUpdateRequest actionRequest) {
 
         int result = chatMessageService.updateMessage(
                 actionRequest.requesterUserId(),
@@ -48,7 +49,7 @@ public class ChatMessageResourceImpl implements ChatMessageResource {
     @PUT
     @Path("/archive")
     @Override
-    public Response archiveMessage(@Valid MessageRemoveRequest actionRequest) {
+    public Response archiveMessage(@Valid @NotNull MessageRemoveRequest actionRequest) {
 
         int result = chatMessageService.archiveMessage(
                 actionRequest.requesterUserId(),

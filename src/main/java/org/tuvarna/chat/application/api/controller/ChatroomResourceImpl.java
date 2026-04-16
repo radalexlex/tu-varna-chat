@@ -3,6 +3,8 @@ package org.tuvarna.chat.application.api.controller;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -31,7 +33,7 @@ public class ChatroomResourceImpl implements ChatroomResource {
     @Path("/create")
     @Override
     public Integer createChatroom(
-            @Valid CreateChatroomRequest request) {
+            @Valid @NotNull CreateChatroomRequest request) {
 
         if (request == null || request.name() == null || request.name().isBlank()) {
             throw new BadRequestException("Invalid request");
@@ -101,7 +103,7 @@ public class ChatroomResourceImpl implements ChatroomResource {
     public Response updateChatroomName(
             @PathParam("chatroomId") @Positive int chatroomId,
             @QueryParam("userId") @Positive long userId,
-            @QueryParam("newName") String newName) {
+            @QueryParam("newName") @NotBlank String newName) {
 
         int result = chatroomService.updateChatroomName(
                 userId,
@@ -111,6 +113,8 @@ public class ChatroomResourceImpl implements ChatroomResource {
 
         return Response.ok(result).build();
     }
+
+//
 
     @PUT
     @Path("/{chatroomId}/update-last-read")
@@ -143,6 +147,12 @@ public class ChatroomResourceImpl implements ChatroomResource {
 
 
 }
+
+//@POST
+//    @Path("/hello")
+//    public Response hello(CreateChatroomRequest request) {
+//        return Response.ok(request).build();
+//    }
 
 //    @GET
 //    @Path("/events/{chatroom-id}")

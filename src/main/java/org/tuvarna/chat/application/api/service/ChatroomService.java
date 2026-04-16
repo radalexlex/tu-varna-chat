@@ -12,7 +12,6 @@ public interface ChatroomService {
 
     int archiveChatroom(long userId, int chatroomId);
 
-    // I assume that the chatroomUserId passed is a valid chatroomUserId securely passed from the upper services
     ContentPage<ChatroomEventfulElement> getChatroomEventfulElements(long userId,
                                                                      Instant latestEventTimeOnPage,
                                                                      Integer latestChatroomIdOnPage,

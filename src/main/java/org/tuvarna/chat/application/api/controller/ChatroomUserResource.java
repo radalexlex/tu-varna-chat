@@ -24,7 +24,7 @@ public interface ChatroomUserResource {
     Response addUsers(
             @QueryParam("userId") @Positive long requestingUserId,
             @PathParam("chatroomId") @Positive int chatroomId,
-            @Valid AddUsersRequest request);
+            @Valid @NotNull AddUsersRequest request);
 
     @PUT
     @Path("/{chatroomId}/users/{affectedUserId}/role")
@@ -32,7 +32,7 @@ public interface ChatroomUserResource {
             @QueryParam("userId") @Positive long requestingUserId,
             @PathParam("chatroomId") @Positive int chatroomId,
             @PathParam("affectedUserId") @Positive long affectedUserId,
-            @Valid UpdateRoleRequest request);
+            @Valid @NotNull UpdateRoleRequest request);
 
     @PUT
     @Path("/{chatroomId}/users/membership-status")
@@ -40,14 +40,14 @@ public interface ChatroomUserResource {
             @QueryParam("userId") @Positive long requestingUserId,
             @QueryParam("affectedUserId") @Positive long affectedUserId,
             @PathParam("chatroomId") @Positive int chatroomId,
-            @Valid UpdateMembershipStatusRequest request);
+            @Valid @NotNull UpdateMembershipStatusRequest request);
 
     @PUT
     @Path("/{chatroomId}/users/update-last-read")
     Response updateLastRead(
             @PathParam("chatroomId") @Positive int chatroomId,
             @QueryParam("userId") @Positive long userId,
-            @Valid UpdateLastReadStateRequest request);
+            @Valid @NotNull UpdateLastReadStateRequest request);
 
     record UpdateLastReadStateRequest(
 

@@ -3,6 +3,7 @@ package org.tuvarna.chat.application.api.controller;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -54,7 +55,7 @@ public class ChatroomUserResourceImpl implements ChatroomUserResource {
     public Response addUsers(
             @QueryParam("userId") @Positive long requestingUserId,
             @PathParam("chatroomId") @Positive int chatroomId,
-            @Valid AddUsersRequest request) {
+            @Valid @NotNull AddUsersRequest request) {
 
         if (request == null || request.usersWithRoles() == null) {
             throw new BadRequestException("Invalid request");
@@ -93,7 +94,7 @@ public class ChatroomUserResourceImpl implements ChatroomUserResource {
             @QueryParam("userId") @Positive long requestingUserId,
             @PathParam("chatroomId") @Positive int chatroomId,
             @PathParam("affectedUserId") @Positive long affectedUserId,
-            @Valid UpdateRoleRequest request) {
+            @Valid @NotNull UpdateRoleRequest request) {
 
         if (request == null || request.updatedRole() == null) {
             throw new BadRequestException("Invalid request");
@@ -122,7 +123,7 @@ public class ChatroomUserResourceImpl implements ChatroomUserResource {
             @QueryParam("userId") @Positive long requestingUserId,
             @QueryParam("affectedUserId") @Positive long affectedUserId,
             @PathParam("chatroomId") @Positive int chatroomId,
-            @Valid UpdateMembershipStatusRequest request) {
+            @Valid @NotNull UpdateMembershipStatusRequest request) {
 
         if (request == null || request.updatedStatus() == null) {
             throw new BadRequestException("Invalid request");
@@ -149,7 +150,7 @@ public class ChatroomUserResourceImpl implements ChatroomUserResource {
     public Response updateLastRead(
             @PathParam("chatroomId") @Positive int chatroomId,
             @QueryParam("userId") @Positive long userId,
-            @Valid UpdateLastReadStateRequest request) {
+            @Valid @NotNull UpdateLastReadStateRequest request) {
 
         if (request == null) {
             throw new BadRequestException("Invalid request");

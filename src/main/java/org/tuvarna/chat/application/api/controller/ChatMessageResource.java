@@ -17,11 +17,11 @@ import org.tuvarna.chat.model.read.dto.ContentPage;
 public interface ChatMessageResource {
     @PUT
     @Path("/update")
-    Response updateMessage(@Valid MessageUpdateRequest actionRequest);
+    Response updateMessage(@Valid @NotNull MessageUpdateRequest actionRequest);
 
     @PUT
     @Path("/archive")
-    Response archiveMessage(@Valid MessageRemoveRequest actionRequest);
+    Response archiveMessage(@Valid @NotNull MessageRemoveRequest actionRequest);
 
     @GET
     @Path("/page")

@@ -13,7 +13,6 @@ import org.tuvarna.chat.application.exceptions.persistence.missing.ChatroomMissi
 import org.tuvarna.chat.application.exceptions.service.ChatroomServiceException;
 import org.tuvarna.chat.application.exceptions.validation.room.InvalidChatroomIdException;
 import org.tuvarna.chat.application.exceptions.validation.room.InvalidChatroomNameException;
-import org.tuvarna.chat.model.entity.postgres.Chatroom;
 import org.tuvarna.chat.model.read.dto.ChatroomEventfulElement;
 import org.tuvarna.chat.model.read.dto.ChatroomOverview;
 import org.tuvarna.chat.model.read.dto.ChatroomUserDetails;

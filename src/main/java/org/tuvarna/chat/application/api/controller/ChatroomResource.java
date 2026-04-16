@@ -1,7 +1,10 @@
 package org.tuvarna.chat.application.api.controller;
 
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.Size;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Response;
 import org.tuvarna.chat.model.read.dto.ChatroomEventfulElement;
@@ -14,7 +17,7 @@ public interface ChatroomResource {
     @POST
     @Path("/create")
     Integer createChatroom(
-            @Valid CreateChatroomRequest request);
+            @Valid @NotNull CreateChatroomRequest request);
 
     @PUT
     @Path("/{chatroomId}/archive")
@@ -33,7 +36,7 @@ public interface ChatroomResource {
     Response updateChatroomName(
             @PathParam("chatroomId") @Positive int chatroomId,
             @QueryParam("userId") @Positive long userId,
-            @QueryParam("newName") String newName);
+            @QueryParam("newName") @NotBlank String newName);
 
     @PUT
     @Path("/{chatroomId}/update-last-read")
@@ -41,13 +44,6 @@ public interface ChatroomResource {
             @PathParam("chatroomId") int chatroomId,
             @QueryParam("userId") @Positive long userId,
             @QueryParam("newLastReadState") @Positive long newLastReadState);
-
-    record UpdateLastReadStateRequest(
-
-            @PositiveOrZero
-            long newLastReadState
-    ) {
-    }
 
     @GET
     @Path("/events")
@@ -60,8 +56,7 @@ public interface ChatroomResource {
     @GET
     @Path("/user")
     List<Integer> getChatroomIdsForUser(
-            @QueryParam("userId")
-            @Positive long requestingUserId);
+            @QueryParam("userId") @Positive long requestingUserId);
 
 
     record CreateChatroomRequest(
