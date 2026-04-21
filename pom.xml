@@ -41,10 +41,6 @@
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-hibernate-orm</artifactId>
         </dependency>
-        <dependency>
-            <groupId>io.quarkus</groupId>
-            <artifactId>quarkus-agroal</artifactId>
-        </dependency>
 
         <dependency>
             <groupId>io.quarkus</groupId>
@@ -97,26 +93,7 @@
     </dependencies>
 
     <build>
-        <!--        <dependency>-->
-        <!--            <groupId>org.hibernate.orm</groupId>-->
-        <!--            <artifactId>hibernate-processor</artifactId>-->
-        <!--            <version>7.2.5.Final</version>-->
-        <!--        </dependency>-->
-        <!--        <dependency>-->
-        <!--            <groupId>org.hibernate.orm</groupId>-->
-        <!--            <artifactId>hibernate-jpamodelgen</artifactId>-->
-        <!--            <version>7.2.5.Final</version>-->
-        <!--            <optional>true</optional>-->
-        <!--        </dependency>-->
-        <!--        <dependency>-->
-        <!--            <groupId>org.hibernate.orm</groupId>-->
-        <!--            <artifactId>hibernate-core</artifactId>-->
-        <!--            <version>7.2.5.Final</version>-->
-        <!--        </dependency>-->
-        <!--        <dependency>-->
-        <!--            <groupId>io.quarkus</groupId>-->
-        <!--            <artifactId>quarkus-hibernate-orm</artifactId>-->
-        <!--        </dependency>-->
+
         <plugins>
             <plugin>
                 <groupId>${quarkus.platform.group-id}</groupId>

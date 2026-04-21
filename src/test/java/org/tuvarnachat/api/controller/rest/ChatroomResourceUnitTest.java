@@ -1,4 +1,4 @@
-package org.tuvarnachat.api.controller.messaging;
+package org.tuvarnachat.api.controller.rest;
 
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;

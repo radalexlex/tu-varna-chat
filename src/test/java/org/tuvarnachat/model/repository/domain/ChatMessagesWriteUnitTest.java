@@ -2,6 +2,7 @@ package org.tuvarnachat.model.repository.domain;
 
 import jakarta.persistence.PersistenceException;
 import org.hibernate.StatelessSession;
+import org.hibernate.query.NativeQuery;
 import org.junit.jupiter.api.Test;
 import org.tuvarna.chat.model.entity.postgres.ChatMessage;
 import org.tuvarna.chat.model.write.dto.ChatMessageOperationalData;
@@ -17,31 +18,23 @@ import static org.mockito.Mockito.*;
 class ChatMessagesWriteUnitTest {
 
     private ChatMessagesWrite repo(StatelessSession session) {
-        return new ChatMessagesWrite() { // are not needed, covered by framework
+        return new ChatMessagesWrite() {
             @Override
             public StatelessSession session() {
                 return session;
             }
 
             @Override
-            public ChatMessage save(ChatMessage entity) {
-                return null;
-            }
+            public ChatMessage save(ChatMessage entity) { return null; }
 
             @Override
-            public List<ChatMessage> saveAll(List<ChatMessage> entities) {
-                return List.of();
-            }
+            public List<ChatMessage> saveAll(List<ChatMessage> entities) { return List.of(); }
 
             @Override
-            public int updateMessageById(long messageId, String content) {
-                return 0;
-            }
+            public int updateMessageById(long messageId, String content) { return 0; }
 
             @Override
-            public int archiveMessageById(long messageId) {
-                return 0;
-            }
+            public int archiveMessageById(long messageId) { return 0; }
         };
     }
 
@@ -59,8 +52,7 @@ class ChatMessagesWriteUnitTest {
     void returnsEmptyStatus_whenInputIsEmpty() {
         ChatMessagesWrite repo = repo(mock(StatelessSession.class));
 
-        MessagePersistenceStatus result =
-                repo.insertMessages(List.of());
+        MessagePersistenceStatus result = repo.insertMessages(List.of());
 
         assertFalse(result.errored());
         assertEquals(0, result.errorIndexes().length);
@@ -71,23 +63,20 @@ class ChatMessagesWriteUnitTest {
         StatelessSession session = mock(StatelessSession.class);
         ChatMessagesWrite repo = repo(session);
 
+        NativeQuery<ChatMessage> query = mock(NativeQuery.class);
+
+        when(session.createNativeQuery(anyString(), eq(ChatMessage.class)))
+                .thenReturn(query);
+
+        when(query.setParameter(anyString(), any()))
+                .thenReturn(query);
+
+        when(query.executeUpdate())
+                .thenReturn(1); // success for all
+
         List<ChatMessageOperationalData> input = List.of(
-                new ChatMessageOperationalData(
-                        "550e8400-e29b-41d4-a716-446655440000",
-                        1,
-                        10L,
-                        10L,
-                        "hello",
-                        "2026-01-01T00:00:00Z"
-                ),
-                new ChatMessageOperationalData(
-                        "550e8400-e29b-41d4-a716-446655440001",
-                        1,
-                        11L,
-                        11L,
-                        "world",
-                        "2026-01-01T00:00:00Z"
-                )
+                validData("550e8400-e29b-41d4-a716-446655440000"),
+                validData("550e8400-e29b-41d4-a716-446655440001")
         );
 
         MessagePersistenceStatus result = repo.insertMessages(input);
@@ -97,7 +86,7 @@ class ChatMessagesWriteUnitTest {
         assertFalse(result.errorIndexes()[0]);
         assertFalse(result.errorIndexes()[1]);
 
-        verify(session, times(2)).insert(any(ChatMessage.class));
+        verify(query, times(2)).executeUpdate();
     }
 
     @Test
@@ -105,8 +94,16 @@ class ChatMessagesWriteUnitTest {
         StatelessSession session = mock(StatelessSession.class);
         ChatMessagesWrite repo = repo(session);
 
-        doThrow(new PersistenceException("DB error"))
-                .when(session).insert(any(ChatMessage.class));
+        NativeQuery<ChatMessage> query = mock(NativeQuery.class);
+
+        when(session.createNativeQuery(anyString(), eq(ChatMessage.class)))
+                .thenReturn(query);
+
+        when(query.setParameter(anyString(), any()))
+                .thenReturn(query);
+
+        when(query.executeUpdate())
+                .thenThrow(new PersistenceException("DB error"));
 
         List<ChatMessageOperationalData> input =
                 List.of(validData("550e8400-e29b-41d4-a716-446655440000"));
@@ -115,8 +112,6 @@ class ChatMessagesWriteUnitTest {
 
         assertTrue(result.errored());
         assertTrue(result.errorIndexes()[0]);
-
-        verify(session).insert(any(ChatMessage.class));
     }
 
     @Test
@@ -124,8 +119,41 @@ class ChatMessagesWriteUnitTest {
         StatelessSession session = mock(StatelessSession.class);
         ChatMessagesWrite repo = repo(session);
 
-        doThrow(new RuntimeException("boom"))
-                .when(session).insert(any(ChatMessage.class));
+        NativeQuery<ChatMessage> query = mock(NativeQuery.class);
+
+        when(session.createNativeQuery(anyString(), eq(ChatMessage.class)))
+                .thenReturn(query);
+
+        when(query.setParameter(anyString(), any()))
+                .thenReturn(query);
+
+        when(query.executeUpdate())
+                .thenThrow(new RuntimeException("boom"));
+
+        List<ChatMessageOperationalData> input =
+                List.of(validData("550e8400-e29b-41d4-a716-446655440000"));
+
+        MessagePersistenceStatus result = repo.insertMessages(input);
+
+        assertTrue(result.errored());
+        assertTrue(result.errorIndexes()[0]);
+    }
+
+    @Test
+    void marksErrorIndex_whenSenderValidationFails() {
+        StatelessSession session = mock(StatelessSession.class);
+        ChatMessagesWrite repo = repo(session);
+
+        NativeQuery<ChatMessage> query = mock(NativeQuery.class);
+
+        when(session.createNativeQuery(anyString(), eq(ChatMessage.class)))
+                .thenReturn(query);
+
+        when(query.setParameter(anyString(), any()))
+                .thenReturn(query);
+
+        when(query.executeUpdate())
+                .thenReturn(0); // sender validation failed
 
         List<ChatMessageOperationalData> input =
                 List.of(validData("550e8400-e29b-41d4-a716-446655440000"));
@@ -141,17 +169,21 @@ class ChatMessagesWriteUnitTest {
         StatelessSession session = mock(StatelessSession.class);
         ChatMessagesWrite repo = repo(session);
 
+        NativeQuery<ChatMessage> query = mock(NativeQuery.class);
+
+        when(session.createNativeQuery(anyString(), eq(ChatMessage.class)))
+                .thenReturn(query);
+
+        when(query.setParameter(anyString(), any()))
+                .thenReturn(query);
+
         AtomicInteger counter = new AtomicInteger(0);
 
-        doAnswer(invocation -> {
+        when(query.executeUpdate()).thenAnswer(inv -> {
             int i = counter.getAndIncrement();
-
-            if (i == 1) {
-                throw new PersistenceException("DB error");
-            }
-
-            return null;
-        }).when(session).insert(any(ChatMessage.class));
+            if (i == 1) return 0; // fail second message
+            return 1;
+        });
 
         List<ChatMessageOperationalData> input = List.of(
                 validData("550e8400-e29b-41d4-a716-446655440000"),
@@ -162,7 +194,6 @@ class ChatMessagesWriteUnitTest {
         MessagePersistenceStatus result = repo.insertMessages(input);
 
         assertTrue(result.errored());
-
         assertFalse(result.errorIndexes()[0]);
         assertTrue(result.errorIndexes()[1]);
         assertFalse(result.errorIndexes()[2]);

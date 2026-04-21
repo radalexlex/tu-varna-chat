@@ -1,5 +1,6 @@
 package org.tuvarna.chat.application.api.controller.messaging.processor;
 
+import io.smallrye.common.annotation.Blocking;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.infrastructure.Infrastructure;
@@ -33,7 +34,7 @@ public class ChatMessageProcessor {
     public Multi<Map<AckStatus, List<ChatMessageOperationalData>>> processMessages(Multi<JsonObject> saveData) {
 
         Multi<List<JsonObject>> m = saveData
-                .group().intoLists().every(Duration.ofMillis(500))
+                .group().intoLists().every(Duration.ofMillis(250))
                 .select().where(
                         list -> list != null
                                 && !list.isEmpty());
@@ -66,10 +67,12 @@ public class ChatMessageProcessor {
         List<ChatMessageOperationalData> saveData = toObjectListFromJsonObject(batch);
 
         return UniUtils.processFailures(
-                Uni.createFrom().item(() ->
-                                chatMessageService.addMessages(saveData)
-                        )
-                        .runSubscriptionOn(Infrastructure.getDefaultWorkerPool()),
+                Uni.createFrom().item(saveData)
+                        .onItem()
+                        .transformToUni(data ->
+                                Uni.createFrom().item(() -> chatMessageService.addMessages(data))
+                                        .runSubscriptionOn(Infrastructure.getDefaultWorkerPool())
+                        ),
                 log,
                 2
         );

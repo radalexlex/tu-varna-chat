@@ -20,7 +20,6 @@ public interface ChatMessagesWrite {
     Logger log = LoggerFactory.getLogger(ChatMessagesWrite.class);
 
     StatelessSession session();
-
     default MessagePersistenceStatus insertMessages(List<ChatMessageOperationalData> dataList) {
 
         if (dataList == null || dataList.isEmpty()) {
@@ -28,47 +27,76 @@ public interface ChatMessagesWrite {
         }
 
         StatelessSession session = session();
-
         Instant currentTime = Instant.now();
 
-        int count = 0;
         boolean failedMessages = false;
         boolean[] errorIndexes = new boolean[dataList.size()];
 
+        final String insertSql = """
+        INSERT INTO chat_message
+            (id,
+             chatroom_id,
+             client_message_id,
+             sender_user_id,
+             content,
+             time_sent,
+             deleted)
+        SELECT
+            nextval('seq_chat_message'),
+            :chatroomId,
+            :clientMessageId,
+            cu.id,
+            :content,
+            :timeSent,
+            false
+        FROM chatroom_user cu
+        WHERE cu.chatroom_id = :chatroomId
+          AND cu.id = :chatUserId
+          AND cu.user_id = :senderUserId
+        LIMIT 1;
+        
+        """;
+
+        int index = 0;
+
         for (ChatMessageOperationalData d : dataList) {
 
-            ChatMessage entity = new ChatMessage();
-            entity.setChatroomId(d.chatroomId());
-            entity.setClientMessageId(UUID.fromString(d.clientMessageId()));
-            entity.setSenderUserId(d.senderId());
-            entity.setContent(d.content());
-            entity.setTimeSent(currentTime);
-            entity.setDeleted(false);
-
             try {
-                session.insert(entity);
+                int rows = session.createNativeQuery(insertSql, ChatMessage.class)
+                        .setParameter("chatroomId", d.chatroomId())
+                        .setParameter("clientMessageId", UUID.fromString(d.clientMessageId()))
+                        .setParameter("senderUserId", d.senderUserId())
+                        .setParameter("chatUserId", d.senderId())
+                        .setParameter("content", d.content())
+                        .setParameter("timeSent", currentTime)
+                        .executeUpdate();
 
+                if (rows == 0) {
+                    log.error(
+                            "Sender validation failed at index {}: no ChatroomUser with user_id={} in chatroom_id={} with id={}",
+                            index, d.senderUserId(), d.chatroomId(), d.senderId()
+                    );
+                    failedMessages = true;
+                    errorIndexes[index] = true;
+                }
 
             } catch (ConstraintViolationException e) {
-                log.error("Constraint violation at index {}, entity: {}", count, entity, e);
-
+                log.error("Constraint violation at index {}, dto: {}", index, d, e);
                 failedMessages = true;
-                errorIndexes[count] = true;
+                errorIndexes[index] = true;
 
             } catch (PersistenceException e) {
-                log.error("Persistence error at index {}, entity: {}", count, entity, e);
-
+                log.error("Persistence error at index {}, dto: {}", index, d, e);
                 failedMessages = true;
-                errorIndexes[count] = true;
+                errorIndexes[index] = true;
 
             } catch (Exception e) {
-                log.error("Unexpected error at index {}, entity: {}", count, entity, e);
-
+                log.error("Unexpected error at index {}, dto: {}", index, d, e);
                 failedMessages = true;
-                errorIndexes[count] = true;
+                errorIndexes[index] = true;
             }
 
-            count++;
+            index++;
         }
 
         return new MessagePersistenceStatus(failedMessages, errorIndexes);
