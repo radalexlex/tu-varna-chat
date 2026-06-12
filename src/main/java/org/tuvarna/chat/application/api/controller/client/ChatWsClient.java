@@ -14,3 +14,9 @@ public interface ChatWsClient {
     Response notifyError(ChatMessageOperationalData messageErrored);
 
 }
+
+// 1-obtain connection to ws
+
+// 2-call auth api /subscribe-chatrooms
+
+// 3-you are subscribed and have an access to send messages!

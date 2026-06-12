@@ -31,5 +31,5 @@ public interface ChatroomUserService {
 
     ChatroomUserDetails getUserDetailsForRequester(long requestingUserId, long userId, int chatroomId);
 
-    int updateLastReadStatus(long requestingUserId, int chatroomId, long lastReadMessage);
+    int updateLastReadStatus(long userId, int chatroomId, long newLastReadState, Instant newLastReadTimestamp);
 }

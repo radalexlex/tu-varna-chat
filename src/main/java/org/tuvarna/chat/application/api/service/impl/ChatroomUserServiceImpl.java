@@ -15,7 +15,9 @@ import org.tuvarna.chat.application.api.service.validation.ValidationHandler;
 import org.tuvarna.chat.application.exceptions.base.ApplicationException;
 import org.tuvarna.chat.application.exceptions.page.PaginationException;
 import org.tuvarna.chat.application.exceptions.persistence.missing.ChatroomUserMissingException;
+import org.tuvarna.chat.application.exceptions.service.ChatroomServiceException;
 import org.tuvarna.chat.application.exceptions.service.ChatroomUserServiceException;
+import org.tuvarna.chat.application.exceptions.validation.room.InvalidChatroomIdException;
 import org.tuvarna.chat.application.exceptions.violation.user.UserNotAllowedException;
 import org.tuvarna.chat.model.entity.postgres.enums.ChatroomRole;
 import org.tuvarna.chat.model.entity.postgres.enums.MembershipStatus;
@@ -25,6 +27,7 @@ import org.tuvarna.chat.model.read.query.DetailQuery;
 import org.tuvarna.chat.model.read.query.PageQuery;
 import org.tuvarna.chat.model.read.query.handler.QueryHandler;
 import org.tuvarna.chat.model.read.query.page.data.ChatroomUserPageData;
+import org.tuvarna.chat.model.write.command.ChatroomCommand;
 import org.tuvarna.chat.model.write.command.ChatroomUserCommand;
 import org.tuvarna.chat.model.write.command.handler.CommandHandler;
 import org.tuvarna.chat.model.write.dto.ChatroomUsersSaveData;
@@ -112,6 +115,37 @@ public class ChatroomUserServiceImpl implements ChatroomUserService {
     }
 
     @Override
+    public int updateLastReadStatus(long userId, int chatroomId, long newLastRead, Instant newLastReadTimestamp) {
+        try {
+
+            if (chatroomId <= 0) {
+                throw new InvalidChatroomIdException("Invalid chatroomId in updateLastReadStatus: " + chatroomId);
+            }
+
+            ChatroomUserDetails cu = getUserDetailsForSelf(userId, chatroomId);
+
+            UserValidationHelper
+                    .getUserChatroomPresenceValidator(chatroomId)
+                    .handle(cu);
+
+            if(newLastRead == 0L) {
+                if(newLastReadTimestamp == null) {
+                    throw new ChatroomUserServiceException("Invalid lastRead data in updateLastReadStatus for userId={"+userId+"} in chatroomId={"+chatroomId+"}");
+                } else {
+                    return commandHandler.handleCommand(new ChatroomUserCommand.UpdateLastReadByTimestamp(chatroomId, userId, newLastReadTimestamp));
+                }
+            } else {
+                return commandHandler.handleCommand(
+                        new ChatroomUserCommand.UpdateLastReadById(chatroomId, userId, newLastRead)
+                );
+            }
+
+        } catch (ApplicationException e) {
+            throw new ChatroomServiceException(e);
+        }
+    }
+
+    @Override
     public int addUsers(long requestingUserId,
                         ChatroomUsersSaveData saveData) {
         try {
@@ -124,6 +158,7 @@ public class ChatroomUserServiceImpl implements ChatroomUserService {
 
             validator.handle(cu);
 
+            //TODO: adapt for new dto
             Set<Long> friendSet = friendServiceApiClient
                     .getAllFriendsOfPerson(requestingUserId)
                     .stream()
@@ -279,25 +314,6 @@ public class ChatroomUserServiceImpl implements ChatroomUserService {
         }
 
 
-    }
-
-    @Override
-    public int updateLastReadStatus(long requestingUserId,
-                                    int chatroomId,
-                                    long lastReadMessage) {
-        try {
-
-            ChatroomUserDetails cu =
-                    getUserDetailsForSelf(requestingUserId, chatroomId);
-
-            return commandHandler.handleCommand(
-                    new ChatroomUserCommand.UpdateReadStatus(
-                            cu.userId(),
-                            lastReadMessage));
-
-        } catch (ApplicationException e) {
-            throw new ChatroomUserServiceException(e);
-        }
     }
 
 

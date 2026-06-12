@@ -5,6 +5,7 @@ import org.tuvarna.chat.model.entity.postgres.ChatroomUser;
 import org.tuvarna.chat.model.entity.postgres.enums.ChatroomRole;
 import org.tuvarna.chat.model.entity.postgres.enums.MembershipStatus;
 
+import java.time.Instant;
 import java.util.List;
 
 @Repository
@@ -28,8 +29,32 @@ public interface ChatroomUsersWrite {
 
     @Query("update ChatroomUser cu set cu.lastRead = :newLastRead " +
             "where cu.userId = :userId " +
-            "and coalesce(cu.lastRead, 0) < :newLastRead")
+            "and coalesce(cu.lastRead, 0) < :newLastRead " +
+            "and cu.chatroomId = :chatroomId")
     @Update
-    int updateLastRead(@Param("userId") long userId, @Param("newLastRead") long newLastRead);
+    int updateLastReadById(@Param("userId") long userId,
+                       @Param("chatroomId") int chatroomId,
+                       @Param("newLastRead") long newLastRead);
+
+    @Query("update ChatroomUser cu " +
+            "set cu.lastRead = (" +
+            "    select max(cm.id) " +
+            "    from ChatMessage cm " +
+            "    where cm.chatroomId = cu.chatroomId " +
+            "      and cm.timeSent <= :newLastRead " +
+            ")" +
+            "where cu.userId = :userId" +
+            "  and cu.chatroomId = :chatroomId" +
+            "  and coalesce(cu.lastRead, 0) < (" +
+            "      select max(cm.id)" +
+            "      from ChatMessage cm" +
+            "      where cm.chatroomId = cu.chatroomId" +
+            "        and cm.timeSent <= :newLastRead" +
+            ")")
+    @Update
+    int updateLastReadByTimestamp(@Param("userId") long userId,
+                           @Param("chatroomId") int chatroomId,
+                           @Param("newLastRead") Instant newLastRead);
+
 
 }

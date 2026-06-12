@@ -159,7 +159,11 @@ public class ChatroomUserResourceImpl implements ChatroomUserResource {
         int result = chatroomUserService.updateLastReadStatus(
                 userId,
                 chatroomId,
-                request.newLastReadState()
+                request.newLastReadMessage(),
+                request.newLastReadTimestamp() == null ?
+                        null
+                        : Instant.ofEpochMilli(Long.parseLong(request.newLastReadTimestamp()))
+
         );
 
         return Response.ok(result).build();

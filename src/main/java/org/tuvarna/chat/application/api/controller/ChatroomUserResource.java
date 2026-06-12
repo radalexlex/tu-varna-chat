@@ -52,7 +52,9 @@ public interface ChatroomUserResource {
     record UpdateLastReadStateRequest(
 
             @PositiveOrZero
-            long newLastReadState
+            long newLastReadMessage,
+            @NotBlank
+            String newLastReadTimestamp
     ) {
     }
 

@@ -23,5 +23,4 @@ public interface ChatroomService {
 
     int updateChatroomName(long userId, int chatroomId, String newName);
 
-    int updateLastReadStatus(long userId, int chatroomId, long newLastRead);
 }

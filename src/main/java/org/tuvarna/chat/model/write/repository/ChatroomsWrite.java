@@ -18,13 +18,6 @@ public interface ChatroomsWrite {
     @Update
     int archiveChatroomById(@Param("chatroomId") int chatroomId); // returns number of changed rows
 
-    @Query("update Chatroom c set c.lastRead = :newLastRead " +
-            "where c.id = :chatroomId " +
-            "and coalesce(c.lastRead, 0) < :newLastRead")
-    @Update
-    int updateLastRead(@Param("chatroomId") int chatroomId,
-                       @Param("newLastRead") long newLastRead);
-
     @Query("update Chatroom c set c.name = :newName where c.id = :chatroomId and c.deleted = false")
     @Update
     int updateName(@Param("chatroomId") int chatroomId,

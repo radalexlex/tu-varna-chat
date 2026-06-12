@@ -9,10 +9,11 @@ import org.tuvarna.chat.model.read.query.PageQuery;
 import org.tuvarna.chat.model.read.query.handler.QueryHandler;
 import org.tuvarna.chat.model.read.query.page.data.ChatroomEventfulPageData;
 import org.tuvarna.chat.model.read.repository.projection.ChatroomEventfulRead;
+import org.tuvarna.chat.model.read.repository.projection.ChatroomEventfulUnprocessed;
 
 @ApplicationScoped
 @Named("ChatroomEventfulPageQueryHandler")
-public class ChatroomEventfulPageQueryHandler implements QueryHandler<ContentPage<ChatroomEventfulElement>, PageQuery<Long, ChatroomEventfulPageData>> {
+public class ChatroomEventfulPageQueryHandler implements QueryHandler<ContentPage<ChatroomEventfulUnprocessed>, PageQuery<Long, ChatroomEventfulPageData>> {
 
     ChatroomEventfulRead repository;
 
@@ -22,7 +23,7 @@ public class ChatroomEventfulPageQueryHandler implements QueryHandler<ContentPag
     }
 
     @Override
-    public ContentPage<ChatroomEventfulElement> handleQuery(PageQuery<Long, ChatroomEventfulPageData> query) {
+    public ContentPage<ChatroomEventfulUnprocessed> handleQuery(PageQuery<Long, ChatroomEventfulPageData> query) {
         switch (query) {
             case PageQuery.GetPage(Long userId, ChatroomEventfulPageData data) -> {
                 if (data == null) {
@@ -39,4 +40,6 @@ public class ChatroomEventfulPageQueryHandler implements QueryHandler<ContentPag
             }
         }
     }
+
+
 }

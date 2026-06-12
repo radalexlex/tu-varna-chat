@@ -51,7 +51,6 @@ public interface ChatMessagesWrite {
             false
         FROM chatroom_user cu
         WHERE cu.chatroom_id = :chatroomId
-          AND cu.id = :chatUserId
           AND cu.user_id = :senderUserId
         LIMIT 1;
         
@@ -65,8 +64,8 @@ public interface ChatMessagesWrite {
                 int rows = session.createNativeQuery(insertSql, ChatMessage.class)
                         .setParameter("chatroomId", d.chatroomId())
                         .setParameter("clientMessageId", UUID.fromString(d.clientMessageId()))
+
                         .setParameter("senderUserId", d.senderUserId())
-                        .setParameter("chatUserId", d.senderId())
                         .setParameter("content", d.content())
                         .setParameter("timeSent", currentTime)
                         .executeUpdate();

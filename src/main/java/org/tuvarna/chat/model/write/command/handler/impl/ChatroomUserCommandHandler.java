@@ -11,6 +11,7 @@ import org.tuvarna.chat.model.write.command.handler.CommandHandler;
 import org.tuvarna.chat.model.write.dto.ChatroomUsersSaveData;
 import org.tuvarna.chat.model.write.repository.ChatroomUsersWrite;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -68,11 +69,16 @@ public class ChatroomUserCommandHandler implements CommandHandler<Integer, Chatr
                 return chatroomUsersWrite.changeRole(userId, role);
 
             }
-            case ChatroomUserCommand.UpdateReadStatus(long userId, Long newLastReadMessageId) -> {
+            case ChatroomUserCommand.UpdateLastReadById(int chatroomId, long userId, long newLastRead) -> {
 
-                return chatroomUsersWrite.updateLastRead(userId, newLastReadMessageId);
+                return chatroomUsersWrite.updateLastReadById(userId, chatroomId, newLastRead);
+
+            } case ChatroomUserCommand.UpdateLastReadByTimestamp(int chatroomId, long userId, Instant newLastReadTimestamp) -> {
+
+                return chatroomUsersWrite.updateLastReadByTimestamp(userId, chatroomId, newLastReadTimestamp);
 
             }
+
 
         }
     }

@@ -29,11 +29,9 @@ public class ChatMessageResourceAdvice implements ExceptionMapper<ChatMessageSer
         Throwable cause = exception.getCause();
 
         try {
-            log.warn("Handled service exception: {}", cause != null ?
-                    cause.getMessage()
-                    : exception.getMessage());
+            log.error("Handled service exception: {}", exception.getMessage(), cause);
         } catch (NullPointerException e) {
-
+            log.error("Unhandled service exception: {}", exception.getMessage());
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity("Internal server error, null exception")
                     .build();

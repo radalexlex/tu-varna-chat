@@ -78,11 +78,10 @@ public class ChatroomUserPageQueryHandler implements QueryHandler<ContentPage<Ch
                 return exPermission ?
                         new ContentPage<>(
                                 toDetails(p.content().stream()),
-                                p.hasPrevious())
+                                false, p.hasPrevious())
                         : new ContentPage<>(
                         toLimitedDetails(p.content().stream()),
-                        p.hasPrevious());
-
+                        false, p.hasPrevious());
             }
         }
     }

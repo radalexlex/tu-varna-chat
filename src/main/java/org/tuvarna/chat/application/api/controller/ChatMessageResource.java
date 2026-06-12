@@ -13,7 +13,6 @@ import jakarta.ws.rs.core.Response;
 import org.tuvarna.chat.model.read.dto.ChatMessageElement;
 import org.tuvarna.chat.model.read.dto.ContentPage;
 
-
 public interface ChatMessageResource {
     @PUT
     @Path("/update")
@@ -28,9 +27,9 @@ public interface ChatMessageResource {
     ContentPage<ChatMessageElement> getMessagePage(
             @QueryParam("requesterUserId") @Positive long requesterUserId,
             @QueryParam("chatroomId") @Positive int chatroomId,
-            @QueryParam("oldestTimestamp") String oldestTimestamp,
-            @QueryParam("oldestId") @Positive Integer oldestId,
-            @QueryParam("requestForOlder") boolean requestForOlder);
+            @QueryParam("messageCursorId") Long messageCursorId,
+            @QueryParam("downScroll") boolean downScroll,
+            @QueryParam("initialRequest") boolean initialRequest);
 
     record MessageUpdateRequest(
 

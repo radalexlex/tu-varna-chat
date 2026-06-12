@@ -70,16 +70,16 @@ public class ChatMessageResourceImpl implements ChatMessageResource {
     public ContentPage<ChatMessageElement> getMessagePage(
             @QueryParam("requesterUserId") @Positive long requesterUserId,
             @QueryParam("chatroomId") @Positive int chatroomId,
-            @QueryParam("oldestTimestamp") String oldestTimestamp,
-            @QueryParam("oldestId") @Positive Integer oldestId,
-            @QueryParam("requestForOlder") boolean requestForOlder) {
+            @QueryParam("messageCursorId") Long messageCursorId,
+            @QueryParam("downScroll") boolean downScroll,
+            @QueryParam("initialRequest") boolean initialRequest) {
 
         return chatMessageService.getMessagePage(
                 requesterUserId,
                 chatroomId,
-                oldestTimestamp != null ? Instant.parse(oldestTimestamp) : null,
-                oldestId,
-                requestForOlder
+                messageCursorId,
+                downScroll,
+                initialRequest
         );
     }
 }

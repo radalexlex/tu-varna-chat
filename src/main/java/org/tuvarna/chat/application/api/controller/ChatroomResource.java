@@ -38,13 +38,6 @@ public interface ChatroomResource {
             @QueryParam("userId") @Positive long userId,
             @QueryParam("newName") @NotBlank String newName);
 
-    @PUT
-    @Path("/{chatroomId}/update-last-read")
-    Response updateLastRead(
-            @PathParam("chatroomId") int chatroomId,
-            @QueryParam("userId") @Positive long userId,
-            @QueryParam("newLastReadState") @Positive long newLastReadState);
-
     @GET
     @Path("/events")
     ContentPage<ChatroomEventfulElement> getChatroomEventfulElements(

@@ -31,11 +31,14 @@ public class ChatroomQueryDetailHandler implements QueryHandler<ChatroomOverview
                                 "Chatroom with chatroomId = " +
                                         "{" + chatroomId + "} not found"));
 
+
+
                 return new ChatroomOverview(
                         chatroomId,
                         c.getName(),
                         c.getCreatedAt().toString(),
-                        c.getLastRead());
+                        c.getLastRead().toString()
+                        );
             }
         }
     }

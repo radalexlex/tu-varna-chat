@@ -16,5 +16,9 @@ public interface ChatMessageService {
 
     int updateMessage(long requestingUserId, ChatMessageElement message, int chatroomId, String newContent);
 
-    ContentPage<ChatMessageElement> getMessagePage(long requestingUserId, int chatroomId, Instant oldestTimestamp, Integer oldestId, boolean requestForOlder);
+    ContentPage<ChatMessageElement> getMessagePage(long requestingUserId,
+                                                   int chatroomId,
+                                                   Long messageCursorId,
+                                                   boolean downScroll,
+                                                   boolean initialRequest);
 }

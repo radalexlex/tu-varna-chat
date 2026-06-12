@@ -113,37 +113,22 @@ public class ChatroomResourceImpl implements ChatroomResource {
 
         return Response.ok(result).build();
     }
-
 //
-
-    @PUT
-    @Path("/{chatroomId}/update-last-read")
-    public Response updateLastRead(@PathParam("chatroomId") int chatroomId,
-                                   @QueryParam("userId") @Positive long userId,
-                                   @QueryParam("newLastReadState") @Positive long newLastReadState) {
-        int result = chatroomService.updateLastReadStatus(
-                userId,
-                chatroomId,
-                newLastReadState);
-
-        return Response.ok(result).build();
-    }
-
-    @PUT
-    @Path("/{chatroomId}/last-read")
-    public Response updateChatroomLastRead(
-            @PathParam("chatroomId") @Positive int chatroomId,
-            @QueryParam("userId") @Positive long userId,
-            @QueryParam("newLastRead") @Positive Long newLastRead) {
-
-        int result = chatroomService.updateLastReadStatus(
-                userId,
-                chatroomId,
-                newLastRead
-        );
-
-        return Response.ok(result).build();
-    }
+//    @PUT
+//    @Path("/{chatroomId}/last-read")
+//    public Response updateChatroomLastRead(
+//            @PathParam("chatroomId") @Positive int chatroomId,
+//            @QueryParam("userId") @Positive long userId,
+//            @QueryParam("newLastRead") @Positive Long newLastRead) {
+//
+//        int result = chatroomService.updateLastReadStatus(
+//                userId,
+//                chatroomId,
+//                newLastRead
+//        );
+//
+//        return Response.ok(result).build();
+//    }
 
 
 }

@@ -22,11 +22,13 @@ import org.tuvarna.chat.model.read.query.PageQuery;
 import org.tuvarna.chat.model.read.query.TotalQuery;
 import org.tuvarna.chat.model.read.query.handler.QueryHandler;
 import org.tuvarna.chat.model.read.query.page.data.ChatroomEventfulPageData;
+import org.tuvarna.chat.model.read.repository.projection.ChatroomEventfulUnprocessed;
 import org.tuvarna.chat.model.write.command.ChatroomCommand;
 import org.tuvarna.chat.model.write.command.handler.CommandHandler;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @ApplicationScoped
 @Transactional
@@ -34,7 +36,7 @@ public class ChatroomServiceImpl implements ChatroomService {
 
     QueryHandler<ChatroomOverview, DetailQuery<Integer>> roomQueryHandler;
     QueryHandler<List<Integer>, TotalQuery<Long>> totalQueryHandler;
-    QueryHandler<ContentPage<ChatroomEventfulElement>,
+    QueryHandler<ContentPage<ChatroomEventfulUnprocessed>,
             PageQuery<Long, ChatroomEventfulPageData>> roomEventfulQueryHandler;
 
     CommandHandler<Integer, ChatroomCommand> commandHandler;
@@ -45,7 +47,7 @@ public class ChatroomServiceImpl implements ChatroomService {
     public ChatroomServiceImpl(@Named("ChatroomQueryHandler")
                                QueryHandler<ChatroomOverview, DetailQuery<Integer>> roomQueryHandler,
                                @Named("ChatroomEventfulPageQueryHandler")
-                               QueryHandler<ContentPage<ChatroomEventfulElement>,
+                               QueryHandler<ContentPage<ChatroomEventfulUnprocessed>,
                                        PageQuery<Long, ChatroomEventfulPageData>> roomEventfulQueryHandler,
                                @Named("ChatroomCommandHandler")
                                CommandHandler<Integer, ChatroomCommand> commandHandler,
@@ -116,34 +118,6 @@ public class ChatroomServiceImpl implements ChatroomService {
     }
 
     @Override
-    public int updateLastReadStatus(long userId, int chatroomId, long newLastRead) {
-        try {
-
-            if (chatroomId <= 0) {
-                throw new InvalidChatroomIdException("Invalid chatroomId: " + chatroomId);
-            }
-
-            if (newLastRead < 0) {
-                throw new PaginationException("Invalid last read value: " + newLastRead);
-            }
-
-            ChatroomUserDetails cu =
-                    chatroomUserService.getUserDetailsForSelf(userId, chatroomId);
-
-            UserValidationHelper
-                    .getUserChatroomPresenceValidator(chatroomId)
-                    .handle(cu);
-
-            return commandHandler.handleCommand(
-                    new ChatroomCommand.UpdateLastRead(chatroomId, newLastRead)
-            );
-
-        } catch (ApplicationException e) {
-            throw new ChatroomServiceException(e);
-        }
-    }
-
-    @Override
     public int archiveChatroom(long userId, int chatroomId) {
         try {
 
@@ -179,25 +153,35 @@ public class ChatroomServiceImpl implements ChatroomService {
             Long latestChatMessageIdOnPage) {
 
         try {
-
-            if (latestChatMessageIdOnPage == null
-                    && latestChatroomIdOnPage == null
+            if ( latestChatroomIdOnPage == null
                     && latestEventTimeOnPage == null) {
 
-                return roomEventfulQueryHandler.handleQuery(
+                ContentPage<ChatroomEventfulUnprocessed> unprocessedPage =
+                        roomEventfulQueryHandler.handleQuery(
                         new PageQuery.GetPage<>(userId, null));
+                return new ContentPage<ChatroomEventfulElement> (
+                        toElements(unprocessedPage.content()),
+                        unprocessedPage.hasNext(),
+                        unprocessedPage.hasPrevious()
+                );
 
-            } else if (latestChatMessageIdOnPage != null
-                    && latestChatroomIdOnPage != null
+            } else if ( latestChatroomIdOnPage != null
                     && latestEventTimeOnPage != null) {
 
-                return roomEventfulQueryHandler.handleQuery(
+
+                ContentPage<ChatroomEventfulUnprocessed> unprocessedPage =
+                        roomEventfulQueryHandler.handleQuery(
                         new PageQuery.GetPage<>(
                                 userId,
                                 new ChatroomEventfulPageData(
                                         latestEventTimeOnPage,
                                         latestChatroomIdOnPage,
                                         latestChatMessageIdOnPage)));
+                return new ContentPage<ChatroomEventfulElement> (
+                        toElements(unprocessedPage.content()),
+                        unprocessedPage.hasNext(),
+                        unprocessedPage.hasPrevious()
+                );
 
             } else {
                 throw new PaginationException("Invalid pagination parameters: { "
@@ -210,6 +194,28 @@ public class ChatroomServiceImpl implements ChatroomService {
         } catch (ApplicationException e) {
             throw new ChatroomServiceException(e);
         }
+    }
+
+    private List<ChatroomEventfulElement> toElements(List<ChatroomEventfulUnprocessed> process) {
+        return process.stream().map(e -> {
+                String imageUrl = null;
+                if(e.isPrivateChat()) {
+                    imageUrl = "wow WHAT here is the url from S3 service BRO THOSE CAT PICS WHAT DID YOU JUST SEND";
+                }
+                return new ChatroomEventfulElement(
+                        e.userId(),
+                        e.chatroomId(),
+                        e.lastRead(),
+                        e.lastReadTimestamp() == null ? null : e.lastReadTimestamp().toString(),
+                        e.displayName(),
+                        e.isPrivateChat(),
+                        imageUrl,
+                        e.messageContent(),
+                        e.chatMessageId(),
+                        e.clientMessageId() == null ? null : e.clientMessageId().toString(),
+                        e.activityTime() == null ? null : e.activityTime().toString());
+        }).collect(Collectors.toList());
+
     }
 
     @Override

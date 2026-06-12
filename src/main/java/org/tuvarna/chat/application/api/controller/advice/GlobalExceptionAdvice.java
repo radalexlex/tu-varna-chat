@@ -27,7 +27,7 @@ public class GlobalExceptionAdvice implements ExceptionMapper<Exception> {
                 try {
                     log.error(cause.getMessage(), cause);
                 } catch (NullPointerException e) {
-                    log.error("Could not get message from cause", e);
+                    log.error("Could not get message from cause, direct exception output: ", ex );
                     return Response.status(Response.Status.BAD_REQUEST)
                             .entity("Bad request, could not retrieve state. " +
                                     "Main exception: " + ex)
@@ -38,13 +38,14 @@ public class GlobalExceptionAdvice implements ExceptionMapper<Exception> {
                                 cause.getMessage() + " Main exception: " + ex)
                         .build();
             }
+            log.error(cause.getMessage(), cause);
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity("Unexpected error, retrieved state: " +
                             cause.getMessage() + " Main exception: " + ex)
                     .build();
 
         } catch (NullPointerException e) {
-            log.error("Unexpected error, nothing retrieved", e);
+            log.error("Unexpected error, nothing retrieved, NPE:{}, original exception: ", e, ex);
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity("Unexpected error, nothing retrieved. " +
                             "Main exception: " + ex + " NPE: " + e)

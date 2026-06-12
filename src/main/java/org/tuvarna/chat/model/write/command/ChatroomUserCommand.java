@@ -4,11 +4,14 @@ import org.tuvarna.chat.model.entity.postgres.enums.ChatroomRole;
 import org.tuvarna.chat.model.entity.postgres.enums.MembershipStatus;
 import org.tuvarna.chat.model.write.dto.ChatroomUsersSaveData;
 
+import java.time.Instant;
+
 public sealed interface ChatroomUserCommand permits
         ChatroomUserCommand.ChangeUserRole,
         ChatroomUserCommand.ChangeMembershipStatus,
         ChatroomUserCommand.AddUsers,
-        ChatroomUserCommand.UpdateReadStatus {
+        ChatroomUserCommand.UpdateLastReadById,
+        ChatroomUserCommand.UpdateLastReadByTimestamp {
 
     record AddUsers(ChatroomUsersSaveData saveData) implements ChatroomUserCommand {
     }
@@ -19,7 +22,10 @@ public sealed interface ChatroomUserCommand permits
     record ChangeMembershipStatus(long userId, MembershipStatus status) implements ChatroomUserCommand {
     }
 
-    record UpdateReadStatus(long userId, Long newLastReadMessageId) implements ChatroomUserCommand {
+    record UpdateLastReadById(int chatroomId, long userId, long newLastRead) implements ChatroomUserCommand {
+    }
+
+    record UpdateLastReadByTimestamp(int chatroomId, long userId, Instant newLastReadTimestamp) implements ChatroomUserCommand {
     }
 
 }

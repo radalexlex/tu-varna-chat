@@ -30,7 +30,11 @@ public class ChatroomUserResourceAdvice
                 ? cause.getMessage()
                 : exception.getMessage();
 
-        log.warn("Handled service exception: {}", msg);
+        if(cause != null) {
+            log.error("Handled service exception: {}", msg, cause);
+        } else {
+            log.error("Handled service exception: {}", msg);
+        }
 
         if (cause instanceof UserNotAllowedException
                 || cause instanceof InvalidUserMembershipStatusException) {

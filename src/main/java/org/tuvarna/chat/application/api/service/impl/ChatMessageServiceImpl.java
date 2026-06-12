@@ -10,7 +10,6 @@ import org.tuvarna.chat.application.api.service.ChatMessageService;
 import org.tuvarna.chat.application.api.service.ChatroomUserService;
 import org.tuvarna.chat.application.api.service.validation.UserValidationHelper;
 import org.tuvarna.chat.application.exceptions.base.ApplicationException;
-import org.tuvarna.chat.application.exceptions.page.PaginationException;
 import org.tuvarna.chat.application.exceptions.persistence.DataPersistenceException;
 import org.tuvarna.chat.application.exceptions.persistence.missing.ChatMessageMissingException;
 import org.tuvarna.chat.application.exceptions.service.ChatMessageServiceException;
@@ -31,7 +30,6 @@ import org.tuvarna.chat.model.write.dto.ChatMessageOperationalData;
 import org.tuvarna.chat.model.write.dto.MessagePersistenceStatus;
 import org.tuvarna.chat.model.write.dto.enums.AckStatus;
 
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -142,7 +140,7 @@ public class ChatMessageServiceImpl implements ChatMessageService {
                 isSuper = false;
             }
 
-            if (isSuper || (requestingUserId == message.senderUser())) {
+            if (isSuper || (requestingUserId == message.senderId())) {
                 int updated = mutationCommandHandler.handleCommand(
                         new ChatMessageMutationCommand.ArchiveMessageMutation(
                                 message.id())
@@ -188,7 +186,7 @@ public class ChatMessageServiceImpl implements ChatMessageService {
 
             ChatroomUserDetails req = chatroomUserService.getUserDetailsForSelf(requestingUserId, chatroomId);
 
-            if (req.userId() != message.senderUser()) {
+            if (req.userId() != message.senderId()) {
                 throw new ChatMessageServiceException(
                         new UserNotAllowedException("User is not allowed to" +
                                 " update this message")
@@ -219,9 +217,9 @@ public class ChatMessageServiceImpl implements ChatMessageService {
     @Override
     public ContentPage<ChatMessageElement> getMessagePage(long requestingUserId,
                                                           int chatroomId,
-                                                          Instant oldestTimestamp,
-                                                          Integer oldestId,
-                                                          boolean requestForOlder) {
+                                                          Long messageCursorId,
+                                                          boolean downScroll,
+                                                          boolean initialRequest) {
         try {
 
             ChatroomUserDetails cu =
@@ -232,28 +230,19 @@ public class ChatMessageServiceImpl implements ChatMessageService {
 
             UserValidationHelper.getUserChatroomPresenceValidator(chatroomId).handle(cu);
 
-            if (oldestTimestamp == null && oldestId == null) {
+            if (messageCursorId == null) { // fallback
                 return messageQueryHandler.handleQuery(
                         new PageQuery.GetPage<>(
                                 chatroomId,
                                 null));
-
-            } else if (oldestTimestamp != null && oldestId != null) {
+            } else {
                 return messageQueryHandler.handleQuery(
                         new PageQuery.GetPage<>(
                                 chatroomId,
                                 new ChatMessagePageData(
-                                        oldestTimestamp,
-                                        oldestId,
-                                        requestForOlder))
-                );
-
-            } else {
-                throw new PaginationException(
-                        "Invalid pagination parameters: both oldestTimestamp " +
-                                "and oldestId must be provided together " +
-                                "or both must be null. Provided: { oldestTimestamp: " + oldestTimestamp +
-                                ", oldestId: " + oldestId + " }"
+                                        messageCursorId,
+                                        downScroll,
+                                        initialRequest))
                 );
             }
         } catch (ApplicationException e) {

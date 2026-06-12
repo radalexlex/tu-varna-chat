@@ -29,9 +29,7 @@ public class DatabaseAdvice implements ExceptionMapper<PersistenceException> {
         Throwable root = exception.getCause();
 
         try {
-            log.warn("Handled service exception: {}", root != null ?
-                    root.getMessage()
-                    : exception.getMessage());
+            log.warn("Handled service exception: {}", exception.getMessage(), root);
         } catch (NullPointerException e) {
 
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)

@@ -3,23 +3,26 @@ package org.tuvarna.chat.model.read.repository.projection;
 import jakarta.data.repository.Repository;
 import org.hibernate.StatelessSession;
 import org.hibernate.query.NativeQuery;
+import org.hibernate.type.StandardBasicTypes;
 import org.jspecify.annotations.NonNull;
 import org.tuvarna.chat.model.read.dto.ChatroomEventfulElement;
 import org.tuvarna.chat.model.read.dto.ContentPage;
 
+import java.sql.Types;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Repository
 public interface ChatroomEventfulRead {
 
-    int PAGE_SIZE = 50;
+    int PAGE_SIZE = 10;
 
     @NonNull
     StatelessSession session();
 
-    default ContentPage<ChatroomEventfulElement> findPageChatroomEventful(
+    default ContentPage<ChatroomEventfulUnprocessed> findPageChatroomEventful(
             long userId,
             Instant lastActivity,
             Integer lastChatroomId,
@@ -27,71 +30,91 @@ public interface ChatroomEventfulRead {
 
         String sql =
                 """
-                        SELECT cu.user_id,
-                               cu.last_read,
-                               cr.id AS cr_id,
-                               cr.name,
-                               cm.content,
-                               cm.client_message_id,
-                               cm.id AS cm_id,
-                               COALESCE(cm.time_sent, cr.created_at) AS activity_time
-                        FROM chatroom_user user_cu
-                        JOIN chatroom cr ON cr.id = user_cu.chatroom_id
-                        LEFT JOIN LATERAL (
-                            SELECT cm.content,
-                                   cm.time_sent,
-                                   cm.client_message_id,
-                                   cm.sender_user_id,
-                                   cm.id
-                            FROM chat_message cm
-                            WHERE cm.chatroom_id = cr.id
-                            ORDER BY cm.time_sent DESC, cm.id DESC
-                            LIMIT 1
-                        ) cm ON true
-                        LEFT JOIN chatroom_user cu ON cu.id = cm.sender_user_id
-                        WHERE user_cu.user_id = :userId
-                          AND (
-                                :lastActivity IS NULL
-                             OR (
-                                    COALESCE(cm.time_sent, cr.created_at) < :lastActivity
-                                 OR (
-                                        COALESCE(cm.time_sent, cr.created_at) = :lastActivity
-                                    AND cr.id > :lastChatroomId
-                                    )
-                                 OR (
-                                        COALESCE(cm.time_sent, cr.created_at) = :lastActivity
-                                    AND cr.id = :lastChatroomId
+                    SELECT
+                       cu.user_id,
+                       user_cu.last_read,
+                       user_cu_last_read_msg.time_sent,
+                       cr.id AS cr_id,
+                      CASE
+                          WHEN (
+                              SELECT COUNT(*)
+                              FROM chatroom_user cu2
+                              WHERE cu2.chatroom_id = cr.id
+                          ) = 2
+                          THEN (
+                              SELECT cu2.user_id::text
+                              FROM chatroom_user cu2
+                              WHERE cu2.chatroom_id = cr.id
+                                AND cu2.user_id != user_cu.user_id
+                              LIMIT 1
+                          )
+                          ELSE cr.name
+                      END AS display_name,
+                      (
+                          SELECT COUNT(*)
+                          FROM chatroom_user cu2
+                          WHERE cu2.chatroom_id = cr.id
+                      ) = 2 AS is_private_chat,
+                       cm.content,
+                      cm.client_message_id,
+                      cm.id AS cm_id,
+                      COALESCE(cm.time_sent, cr.created_at) AS activity_time
+                                   FROM chatroom_user user_cu
+                     LEFT JOIN chat_message user_cu_last_read_msg ON user_cu.last_read = user_cu_last_read_msg.id
+                     JOIN chatroom cr ON cr.id = user_cu.chatroom_id
+                         LEFT JOIN LATERAL (
+                    SELECT cm.content,
+                           cm.time_sent,
+                           cm.client_message_id,
+                           cm.sender_user_id,
+                           cm.id
+                    FROM chat_message cm
+                    WHERE cm.chatroom_id = cr.id
+                    ORDER BY cm.time_sent DESC, cm.id DESC
+                    LIMIT 1
+                    ) cm ON true
+                         LEFT JOIN chatroom_user cu ON cu.id = cm.sender_user_id
+                
+                WHERE user_cu.user_id = :userId
+                  AND (
+                    CAST(:lastActivity AS timestamptz) IS NULL
+                        OR COALESCE(cm.time_sent, cr.created_at) < CAST(:lastActivity AS timestamptz)
+                        OR (
+                        COALESCE(cm.time_sent, cr.created_at) = CAST(:lastActivity AS timestamptz)
+                            AND (
+                            cr.id > :lastChatroomId
+                                OR (
+                                cr.id = :lastChatroomId
                                     AND COALESCE(cm.id, 0) > :lastChatMessageId
-                                    )
                                 )
-                              )
-                        ORDER BY COALESCE(cm.time_sent, cr.created_at) DESC,
-                                 cr.id ASC,
-                                 COALESCE(cm.id, 0) ASC
-                        LIMIT :limit + 1
-                        """;
+                            )
+                        )
+                    )
+                ORDER BY COALESCE(cm.time_sent, cr.created_at) DESC,
+                         cr.id ASC,
+                         COALESCE(cm.id, 0) ASC
+                LIMIT :limit + 1
+                """;
 
-        List<ChatroomEventfulElement> resultList = new ArrayList<>();
+        StatelessSession session = session();
 
-        try (StatelessSession session = session()) {
+        NativeQuery<ChatroomEventfulUnprocessed> query =
+                session.createNativeQuery(sql, ChatroomEventfulUnprocessed.class);
 
-            NativeQuery<ChatroomEventfulElement> query =
-                    session.createNativeQuery(sql, ChatroomEventfulElement.class);
+        query.setParameter("userId", userId);
+        query.setParameter("lastActivity", lastActivity);
+        query.setParameter("lastChatroomId", lastChatroomId);
+        query.setParameter("lastChatMessageId", lastChatMessageId);
 
-            query.setParameter("userId", userId);
-            query.setParameter("lastActivity", lastActivity);
-            query.setParameter("lastChatroomId", lastChatroomId);
-            query.setParameter("lastChatMessageId", lastChatMessageId);
-            query.setParameter("limit", PAGE_SIZE);
+        query.setParameter("limit", PAGE_SIZE);
 
-            resultList = query.getResultList();
-        }
+        List<ChatroomEventfulUnprocessed> resultList = query.getResultList();
 
         if (resultList.size() > PAGE_SIZE) {
             resultList.removeLast();
-            return new ContentPage<>(resultList, true);
+            return new ContentPage<>(resultList, true, false);
         } else {
-            return new ContentPage<>(resultList, false);
+            return new ContentPage<>(resultList, false, false);
         }
     }
 }
